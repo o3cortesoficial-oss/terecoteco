@@ -2196,11 +2196,81 @@
     const link = productLink(product.slug);
     productPreviewUrl.textContent = link;
     productPreviewOpenLink.href = link;
+    if (productPreviewFrame.dataset.templateLoaded === 'true') {
+      applyProductToPreviewFrame(product);
+      return;
+    }
     try {
       const template = await ensureProductTemplate();
+      productPreviewFrame.dataset.templateLoaded = 'true';
       productPreviewFrame.srcdoc = template.replace(/<\/body>/i, buildProductEditorRuntime(product) + '\n</body>');
+      productPreviewFrame.onload = () => applyProductToPreviewFrame(readProductDraft());
     } catch (e) {
       productPreviewFrame.srcdoc = '<!doctype html><html><body style="font-family:Arial;padding:20px;">Erro ao carregar o Kit Panela.html para preview.</body></html>';
+    }
+  }
+
+  function applyProductToPreviewFrame(product) {
+    const doc = productPreviewFrame && productPreviewFrame.contentDocument;
+    if (!doc) return;
+    const fields = product.fields || {};
+    const money = value => 'R$ ' + Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const text = (selector, value) => {
+      if (value === undefined || value === null || value === '') return;
+      const el = doc.querySelector(selector);
+      if (el) el.textContent = value;
+    };
+    const split = value => String(value || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const esc = value => String(value || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+
+    doc.title = product.name || doc.title;
+    text('.pi-title', product.name);
+    text('.pb-amount', money(product.price));
+    if (product.originalPrice) text('.pb-original', money(product.originalPrice));
+    text('.pb-discount', fields.discountBadge);
+    text('.pi-discount-chip', fields.discountChip);
+    text('.pi-economize-left span:last-child', fields.savingsText);
+    text('.pb-flash span', fields.flashLabel);
+    text('.pi-badge.maes', fields.campaignBadge);
+    text('#promoDate', fields.promoBadge);
+    text('#shipDate', fields.shippingText);
+    text('.pi-ship-tag', fields.shippingTag);
+    text('.si-name', fields.storeName);
+    text('.si-sold', fields.storeSold);
+    text('.bb-cart', fields.cartText);
+    text('.bb-buy', fields.buyText);
+
+    const fee = doc.querySelector('.pi-ship-fee');
+    if (fee && fields.shippingFee) {
+      fee.innerHTML = 'Taxa de envio: <span style="text-decoration:line-through">' + esc(fields.shippingFee) + '</span>';
+    }
+    const logo = doc.querySelector('.si-logo');
+    if (logo && fields.storeLogo) logo.src = fields.storeLogo;
+
+    const gallery = Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []);
+    const row = doc.querySelector('#carTrack .row');
+    if (row && gallery.length) {
+      row.innerHTML = gallery.map(src => '<div class="car-slide"><div class="car-slide-inner"><img src="' + esc(src) + '" alt="' + esc(product.name || 'Produto') + '"></div></div>').join('');
+      text('#carCur', '1');
+      text('#carTotal', String(gallery.length));
+    }
+
+    const protection = doc.querySelector('.cp-grid');
+    if (protection && fields.protectionItemsText) {
+      protection.innerHTML = split(fields.protectionItemsText).map(line => '<div class="cp-item"><span>✓</span><span>' + esc(line) + '</span></div>').join('');
+    }
+    const specs = doc.querySelector('.pd-specs');
+    if (specs && fields.specsText) {
+      specs.innerHTML = split(fields.specsText).map(line => {
+        const parts = line.split(':');
+        return '<div class="pd-spec-key">' + esc((parts.shift() || '').trim()) + '</div><div class="pd-spec-val">' + esc(parts.join(':').trim()) + '</div>';
+      }).join('');
+    }
+    const desc = doc.querySelector('.pd-desc-text');
+    if (desc && (product.description || fields.bulletsText)) {
+      let markup = split(product.description).map(line => '<p>' + esc(line) + '</p>').join('');
+      split(fields.bulletsText).forEach(line => { markup += '<div class="pd-bullet"><span class="dot">•</span><p>' + esc(line) + '</p></div>'; });
+      desc.innerHTML = markup;
     }
   }
 
