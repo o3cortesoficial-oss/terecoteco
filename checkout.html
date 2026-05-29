@@ -1816,6 +1816,116 @@
 
     }
 
+    .checkout-message-overlay {
+
+      display: none;
+
+      position: absolute;
+
+      inset: 0;
+
+      z-index: 130;
+
+      background: rgba(15, 23, 42, 0.48);
+
+      align-items: center;
+
+      justify-content: center;
+
+      padding: 20px;
+
+    }
+
+    .checkout-message-card {
+
+      width: min(100%, 340px);
+
+      background: #ffffff;
+
+      border-radius: 14px;
+
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.22);
+
+      padding: 22px 18px 18px;
+
+      text-align: left;
+
+    }
+
+    .checkout-message-icon {
+
+      width: 44px;
+
+      height: 44px;
+
+      border-radius: 50%;
+
+      background: rgba(254, 44, 85, 0.1);
+
+      color: var(--primary);
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      margin-bottom: 14px;
+
+      font-weight: 900;
+
+      font-size: 1.35rem;
+
+    }
+
+    .checkout-message-title {
+
+      font-size: 1.05rem;
+
+      line-height: 1.25;
+
+      font-weight: 800;
+
+      color: var(--text-dark);
+
+      margin-bottom: 8px;
+
+    }
+
+    .checkout-message-body {
+
+      font-size: 0.875rem;
+
+      line-height: 1.45;
+
+      color: var(--text-muted);
+
+      margin-bottom: 18px;
+
+    }
+
+    .checkout-message-button {
+
+      width: 100%;
+
+      border: none;
+
+      border-radius: 10px;
+
+      background: var(--primary);
+
+      color: #ffffff;
+
+      font-weight: 800;
+
+      font-size: 0.95rem;
+
+      padding: 12px 16px;
+
+      cursor: pointer;
+
+    }
+
 
 
     /* Receipt & Pix copy success overlay screen */
@@ -2603,6 +2713,24 @@
 
 
 
+    <div class="checkout-message-overlay" id="checkoutMessageOverlay">
+
+      <div class="checkout-message-card">
+
+        <div class="checkout-message-icon">!</div>
+
+        <div class="checkout-message-title" id="checkoutMessageTitle">Não foi possível continuar</div>
+
+        <div class="checkout-message-body" id="checkoutMessageBody">Tente novamente em alguns instantes.</div>
+
+        <button class="checkout-message-button" id="checkoutMessageButton" type="button">Entendi</button>
+
+      </div>
+
+    </div>
+
+
+
     <!-- Success Receipt & Payment Modal Screen -->
 
     <div class="success-overlay" id="successOverlay">
@@ -3070,7 +3198,7 @@
 
       if (!fullName || !cpf || !email || !phone || !cep || !street || !number || !neighborhood || !city || !state) {
 
-        alert("Por favor, preencha todos os campos obrigatórios da Entrega!");
+        showCheckoutMessage("Dados incompletos", "Preencha todos os campos obrigatorios da entrega.");
 
         return;
 
@@ -3476,6 +3604,32 @@
 
     const successOverlay = document.getElementById('successOverlay');
 
+    const checkoutMessageOverlay = document.getElementById('checkoutMessageOverlay');
+
+    const checkoutMessageTitle = document.getElementById('checkoutMessageTitle');
+
+    const checkoutMessageBody = document.getElementById('checkoutMessageBody');
+
+    const checkoutMessageButton = document.getElementById('checkoutMessageButton');
+
+    function showCheckoutMessage(title, message) {
+
+      processingOverlay.style.display = 'none';
+
+      checkoutMessageTitle.textContent = title;
+
+      checkoutMessageBody.textContent = message;
+
+      checkoutMessageOverlay.style.display = 'flex';
+
+    }
+
+    checkoutMessageButton.addEventListener('click', () => {
+
+      checkoutMessageOverlay.style.display = 'none';
+
+    });
+
 
 
     btnPlaceOrder.addEventListener('click', () => {
@@ -3484,7 +3638,7 @@
 
       if (!isAddressSaved) {
 
-        alert("Por favor, adicione o endereço de envio!");
+        showCheckoutMessage("Endereco pendente", "Adicione o endereco de envio para continuar com o pedido.");
 
         openAddressModal();
 
@@ -3590,7 +3744,7 @@
         }
       } catch (err) {
         processingOverlay.style.display = 'none';
-        alert('Pagamento nao iniciado: ' + err.message);
+        showCheckoutMessage("Pagamento nao iniciado", err.message);
         return;
       }
 

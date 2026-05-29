@@ -72,6 +72,14 @@ function pickFirst(obj, keys) {
   return '';
 }
 
+function gatewayErrorMessage(gatewayName, data, fallback) {
+  const raw = String(data?.message || data?.error || data?.errors?.[0]?.message || fallback || '').trim();
+  if (/valid api credentials|invalid api|credentials|unauthorized|forbidden|token|api key/i.test(raw)) {
+    return `${gatewayName} recusou a cobrança Pix porque as credenciais da API não estão válidas. Confira o token/chave em Admin > Gateways.`;
+  }
+  return raw || `${gatewayName} recusou a criação do Pix.`;
+}
+
 async function nextOrderId() {
   const { data, error } = await supabase
     .from('orders')
@@ -211,7 +219,7 @@ async function createGatewayPixPayment(gateway, payload) {
     });
 
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.message || data.error || 'WestPay recusou a criacao do Pix.');
+    if (!response.ok) throw new Error(gatewayErrorMessage('WestPay', data, 'WestPay recusou a criacao do Pix.'));
     const transaction = data.transaction || data.data || data.payment || data;
     const qrCode = pickFirst(transaction, [
       'qrCode',
