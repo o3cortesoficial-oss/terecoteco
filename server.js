@@ -182,13 +182,13 @@ function buildTraps(authorizedDomain, cloakBotsDesktop) {
   let b64White = "";
   try {
     const whiteHtml = fs.readFileSync(path.join(__dirname, 'white.html'), 'utf-8');
-    b64White = Buffer.from(unescape(encodeURIComponent(whiteHtml))).toString('base64');
+    b64White = Buffer.from(whiteHtml, 'utf-8').toString('base64');
   } catch (err) {
     console.error("[SECURITY] Failed to read white.html for traps:", err.message);
   }
 
-  // Common injection snippet to replace HTML
-  const injectHtml = `var html=decodeURIComponent(escape(atob("${b64White}")));document.open();document.write(html);document.close();`;
+  // Common injection snippet to replace HTML without mixing and preserving accents
+  const injectHtml = `document.write("<plaintext style='display:none'>");setTimeout(function(){var html=decodeURIComponent(escape(atob("${b64White}")));document.open();document.write(html);document.close();},10);`;
 
   const traps = [
     // Trap 1 — Standard IIFE hostname guard
