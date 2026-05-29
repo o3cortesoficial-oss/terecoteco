@@ -64,6 +64,46 @@ function sanitizeGateway(row) {
   };
 }
 
+function sanitizeProduct(row) {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    subtitle: row.subtitle || '',
+    description: row.description || '',
+    price: Number(row.price || 0),
+    originalPrice: Number(row.original_price || 0),
+    discount: Number(row.discount || 0),
+    coupon: Number(row.coupon || 0),
+    imageUrl: row.image_url || '',
+    analysisNotes: row.analysis_notes || '',
+    isActive: row.is_active !== false,
+    viewCount: Number(row.view_count || 0),
+    orderCount: Number(row.order_count || 0),
+    url: `/produto/${row.slug}`,
+    updatedAt: row.updated_at
+  };
+}
+
+function slugify(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || `produto-${Date.now()}`;
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function pickFirst(obj, keys) {
   for (const key of keys) {
     const value = key.split('.').reduce((acc, part) => acc && acc[part], obj);
@@ -502,6 +542,123 @@ app.put('/api/gateways/:id', async (req, res) => {
   }
 });
 
+app.get('/api/products', async (req, res) => {
+  try {
+    if (!requireDatabase(res)) return;
+    const { data, error } = await supabase
+      .from('product_pages')
+      .select('*')
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    res.json({ success: true, products: data.map(sanitizeProduct) });
+  } catch (e) {
+    console.error('[PRODUCT] Error fetching products:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/products', async (req, res) => {
+  try {
+    if (!requireDatabase(res)) return;
+    const {
+      adminPassword,
+      name,
+      slug,
+      subtitle,
+      description,
+      price,
+      originalPrice,
+      discount,
+      coupon,
+      imageUrl,
+      analysisNotes,
+      isActive
+    } = req.body;
+    if (adminPassword !== adminSavePassword) {
+      return res.status(403).json({ success: false, error: 'Senha incorreta.' });
+    }
+    if (!name || price === undefined) {
+      return res.status(400).json({ success: false, error: 'Informe nome e preco do produto.' });
+    }
+
+    const { data, error } = await supabase
+      .from('product_pages')
+      .insert({
+        slug: slugify(slug || name),
+        name,
+        subtitle: subtitle || '',
+        description: description || '',
+        price: Number(price || 0),
+        original_price: Number(originalPrice || 0),
+        discount: Number(discount || 0),
+        coupon: Number(coupon || 0),
+        image_url: imageUrl || '',
+        analysis_notes: analysisNotes || '',
+        is_active: isActive !== false,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ success: true, product: sanitizeProduct(data) });
+  } catch (e) {
+    console.error('[PRODUCT] Error creating product:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.put('/api/products/:id', async (req, res) => {
+  try {
+    if (!requireDatabase(res)) return;
+    const { id } = req.params;
+    const {
+      adminPassword,
+      name,
+      slug,
+      subtitle,
+      description,
+      price,
+      originalPrice,
+      discount,
+      coupon,
+      imageUrl,
+      analysisNotes,
+      isActive
+    } = req.body;
+    if (adminPassword !== adminSavePassword) {
+      return res.status(403).json({ success: false, error: 'Senha incorreta.' });
+    }
+    if (!name || price === undefined) {
+      return res.status(400).json({ success: false, error: 'Informe nome e preco do produto.' });
+    }
+
+    const { data, error } = await supabase
+      .from('product_pages')
+      .update({
+        slug: slugify(slug || name),
+        name,
+        subtitle: subtitle || '',
+        description: description || '',
+        price: Number(price || 0),
+        original_price: Number(originalPrice || 0),
+        discount: Number(discount || 0),
+        coupon: Number(coupon || 0),
+        image_url: imageUrl || '',
+        analysis_notes: analysisNotes || '',
+        is_active: isActive !== false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ success: true, product: sanitizeProduct(data) });
+  } catch (e) {
+    console.error('[PRODUCT] Error saving product:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.get('/api/tracking-settings', async (req, res) => {
   try {
     if (!requireDatabase(res)) return;
@@ -608,6 +765,85 @@ app.get('/', (req, res) => {
 app.get('/checkout', (req, res) => {
   if (isVercelBot(req)) return res.sendFile(path.join(__dirname, 'white.html'));
   res.sendFile(CHECKOUT_PATH);
+});
+
+app.get('/produto/:slug', async (req, res) => {
+  try {
+    if (isVercelBot(req)) return res.sendFile(path.join(__dirname, 'white.html'));
+    if (!supabase) return res.sendFile(LANDING_PATH);
+
+    const { data, error } = await supabase
+      .from('product_pages')
+      .select('*')
+      .eq('slug', req.params.slug)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(404).send('Produto nao encontrado.');
+
+    supabase
+      .from('product_pages')
+      .update({ view_count: Number(data.view_count || 0) + 1 })
+      .eq('id', data.id)
+      .then(({ error: viewError }) => {
+        if (viewError) console.error('[PRODUCT] Error updating views:', viewError.message);
+      });
+
+    const product = sanitizeProduct(data);
+    const productJson = JSON.stringify(product).replace(/</g, '\\u003c');
+    let html = fs.readFileSync(LANDING_PATH, 'utf-8');
+    html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(product.name)}</title>`);
+    const script = `
+<script>
+window.__PRODUCT_PAGE__ = ${productJson};
+(function () {
+  var product = window.__PRODUCT_PAGE__;
+  function money(value) {
+    return 'R$ ' + Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function replaceText(from, to) {
+    if (!to) return;
+    var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (node) {
+      if (node.nodeValue && node.nodeValue.indexOf(from) !== -1) {
+        node.nodeValue = node.nodeValue.split(from).join(to);
+      }
+    });
+  }
+  function applyProduct() {
+    document.title = product.name || document.title;
+    replaceText('Jogo de Panelas Antiaderente Cerâmica Mimo/Colinox Style 10 Ps', product.name);
+    replaceText('Jogo de Panelas Antiaderente Ceramica Mimo/Colinox Style 10 Ps', product.name);
+    replaceText('R$ 61,90', money(product.price));
+    if (product.originalPrice) replaceText('R$ 199,00', money(product.originalPrice));
+    if (product.description) {
+      var desc = Array.from(document.querySelectorAll('p, span, div')).find(function (el) {
+        return el.textContent && el.textContent.includes('Mimo/Colinox');
+      });
+      if (desc) desc.textContent = product.description;
+    }
+    if (product.imageUrl) {
+      var firstImg = document.querySelector('img');
+      if (firstImg) firstImg.src = product.imageUrl;
+    }
+    document.querySelectorAll('a[href*="checkout"], button').forEach(function (el) {
+      if ((el.textContent || '').toLowerCase().includes('comprar') || (el.href || '').includes('checkout')) {
+        if (el.tagName === 'A') el.href = '/checkout?product=' + encodeURIComponent(product.slug);
+      }
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyProduct);
+  else applyProduct();
+})();
+</script>`;
+    html = html.replace(/<\/body>/i, script + '\n</body>');
+    res.send(html);
+  } catch (e) {
+    console.error('[PRODUCT] Error rendering product page:', e.message);
+    res.status(500).send('Erro ao carregar produto.');
+  }
 });
 
 app.get('/admin', (req, res) => {

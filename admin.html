@@ -724,6 +724,62 @@
       cursor: pointer;
     }
 
+    .product-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .product-link {
+      color: var(--primary);
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .product-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .product-action-btn {
+      border: 1px solid var(--slate-200);
+      background: #ffffff;
+      color: var(--slate-700);
+      border-radius: var(--border-radius-sm);
+      padding: 0.45rem 0.7rem;
+      font-size: 0.75rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .product-analysis {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      color: var(--slate-500);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .product-modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .product-toolbar,
+      .product-modal-grid {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+
     /* Anti-Clone Console Styling */
     .security-console {
       background-color: var(--bg-dark);
@@ -939,6 +995,14 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h.01M11 15h2m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
           </svg>
           Gateways
+        </button>
+      </li>
+      <li>
+        <button class="nav-item-btn" data-target="tab-products">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+          Produtos
         </button>
       </li>
       <li>
@@ -1242,6 +1306,46 @@
       </div>
     </div>
 
+    <!-- ========================================== -->
+    <!-- TAB 4: PRODUTOS -->
+    <!-- ========================================== -->
+    <div id="tab-products" class="tab-content">
+      <div class="content-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Produtos Cadastrados</h3>
+            <p class="card-subtitle">Crie produtos usando o mesmo layout da pagina Kit Panela, com link e analise</p>
+          </div>
+          <button class="btn-admin-submit" type="button" id="btnNewProduct">Novo Produto</button>
+        </div>
+        <div class="card-body">
+          <div class="product-toolbar">
+            <span class="status-badge approved" id="productCountBadge">0 produtos</span>
+            <span class="card-subtitle">Cada link abre uma versao editavel do layout base.</span>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Link</th>
+                  <th>Analise</th>
+                  <th>Preco</th>
+                  <th>Status</th>
+                  <th>Acoes</th>
+                </tr>
+              </thead>
+              <tbody id="productsTableBody">
+                <tr>
+                  <td colspan="6">Carregando produtos reais...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="modal-overlay" id="gatewayModalOverlay">
       <div class="modal">
         <div class="modal-header">
@@ -1295,8 +1399,79 @@
       </div>
     </div>
 
+    <div class="modal-overlay" id="productModalOverlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="card-title" id="productModalTitle">Novo Produto</h3>
+        </div>
+        <form class="modal-body" id="productEditForm">
+          <div class="product-modal-grid">
+            <div>
+              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Nome do Produto</label>
+              <input class="input-field-admin" id="productModalName" type="text" placeholder="Nome que aparece na pagina" required>
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Slug do Link</label>
+              <input class="input-field-admin" id="productModalSlug" type="text" placeholder="kit-panela">
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Preco Final</label>
+              <input class="input-field-admin" id="productModalPrice" type="number" min="0" step="0.01" placeholder="61.90" required>
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Preco Original</label>
+              <input class="input-field-admin" id="productModalOriginalPrice" type="number" min="0" step="0.01" placeholder="199.00">
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Desconto do Produto</label>
+              <input class="input-field-admin" id="productModalDiscount" type="number" min="0" step="0.01" placeholder="137.10">
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Cupom TikTok Shop</label>
+              <input class="input-field-admin" id="productModalCoupon" type="number" min="0" step="0.01" placeholder="18.00">
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Imagem Principal</label>
+              <input class="input-field-admin" id="productModalImageUrl" type="text" placeholder="https://site.com/produto.png">
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Subtitulo Interno</label>
+              <input class="input-field-admin" id="productModalSubtitle" type="text" placeholder="Campanha, nicho ou observacao">
+            </div>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Descricao da Pagina</label>
+            <textarea class="input-field-admin" id="productModalDescription" rows="3" placeholder="Texto curto para substituir a descricao do layout base"></textarea>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Analise / Observacoes</label>
+            <textarea class="input-field-admin" id="productModalAnalysis" rows="3" placeholder="Notas de campanha, margem, fonte de trafego ou teste A/B"></textarea>
+          </div>
+
+          <div class="gateway-toggle-row">
+            <label>
+              <input type="checkbox" id="productModalActive" checked>
+              Produto ativo e link publico
+            </label>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Senha para salvar alteracoes</label>
+            <input class="input-field-admin" id="productModalAdminPassword" type="password" placeholder="Digite a senha de confirmacao" autocomplete="off" required>
+          </div>
+
+          <div class="gateway-modal-actions">
+            <button class="btn-admin-secondary" type="button" id="productModalCancel">Cancelar</button>
+            <button class="btn-admin-submit" type="submit">Salvar Produto</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- ========================================== -->
-    <!-- TAB 4: FUNIL & PIXEL -->
+    <!-- TAB 5: FUNIL & PIXEL -->
     <!-- ========================================== -->
     <div id="tab-tracking" class="tab-content">
       <div class="content-card">
@@ -1459,13 +1634,24 @@
   // ==========================================
   let orders = [];
   let gateways = [];
+  let products = [];
   let currentGatewayEdit = 'primecash';
+  let currentProductEdit = null;
 
   function formatAdminDate(value) {
     if (!value) return '-';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
     return date.toLocaleDateString('pt-BR') + ' - ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function escapeAdminHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   function updateDashboardMetrics(ordersList) {
@@ -1621,6 +1807,149 @@
     });
   });
 
+  const productsTableBody = document.getElementById('productsTableBody');
+  const productCountBadge = document.getElementById('productCountBadge');
+  const productModalOverlayEl = document.getElementById('productModalOverlay');
+  const productEditForm = document.getElementById('productEditForm');
+  const productCancelBtn = document.getElementById('productModalCancel');
+  const newProductBtn = document.getElementById('btnNewProduct');
+
+  function productById(id) {
+    return products.find(product => String(product.id) === String(id)) || {};
+  }
+
+  function productLink(slug) {
+    return '/produto/' + encodeURIComponent(slug || '');
+  }
+
+  function renderProducts(productsList) {
+    if (!productsTableBody) return;
+    if (productCountBadge) {
+      productCountBadge.textContent = productsList.length + (productsList.length === 1 ? ' produto' : ' produtos');
+    }
+    productsTableBody.innerHTML = '';
+    if (!productsList.length) {
+      productsTableBody.innerHTML = '<tr><td colspan="6">Nenhum produto cadastrado no banco.</td></tr>';
+      return;
+    }
+    productsList.forEach(product => {
+      const link = productLink(product.slug);
+      const statusClass = product.isActive ? 'approved' : 'declined';
+      const statusText = product.isActive ? 'Ativo' : 'Inativo';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div style="font-weight:800;color:var(--slate-900);">${escapeAdminHtml(product.name)}</div>
+          <div style="font-size:0.75rem;color:var(--slate-500);margin-top:3px;">${escapeAdminHtml(product.subtitle || product.slug)}</div>
+        </td>
+        <td>
+          <a class="product-link" href="${link}" target="_blank">${escapeAdminHtml(link)}</a>
+        </td>
+        <td>
+          <div class="product-analysis">
+            <span>${Number(product.viewCount || 0)} visitas</span>
+            <span>${Number(product.orderCount || 0)} pedidos</span>
+            <span>${escapeAdminHtml(product.analysisNotes || 'Sem observacoes')}</span>
+          </div>
+        </td>
+        <td style="font-weight:800;">R$ ${Number(product.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+        <td>
+          <div class="product-actions">
+            <button class="product-action-btn" type="button" data-product-edit="${product.id}">Editar</button>
+            <a class="product-action-btn" href="${link}" target="_blank">Abrir</a>
+          </div>
+        </td>
+      `;
+      productsTableBody.appendChild(tr);
+    });
+    productsTableBody.querySelectorAll('[data-product-edit]').forEach(button => {
+      button.addEventListener('click', () => openProductEditor(button.getAttribute('data-product-edit')));
+    });
+  }
+
+  async function loadProducts() {
+    if (productsTableBody) productsTableBody.innerHTML = '<tr><td colspan="6">Carregando produtos reais...</td></tr>';
+    try {
+      const res = await fetch('/api/products');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) throw new Error(data.error || 'Falha ao carregar produtos.');
+      products = Array.isArray(data.products) ? data.products : [];
+      renderProducts(products);
+    } catch (e) {
+      if (productsTableBody) productsTableBody.innerHTML = '<tr><td colspan="6">Erro ao carregar produtos reais: ' + escapeAdminHtml(e.message) + '</td></tr>';
+    }
+  }
+
+  function fillProductForm(product) {
+    document.getElementById('productModalName').value = product.name || '';
+    document.getElementById('productModalSlug').value = product.slug || '';
+    document.getElementById('productModalPrice').value = product.price || '';
+    document.getElementById('productModalOriginalPrice').value = product.originalPrice || '';
+    document.getElementById('productModalDiscount').value = product.discount || '';
+    document.getElementById('productModalCoupon').value = product.coupon || '';
+    document.getElementById('productModalImageUrl').value = product.imageUrl || '';
+    document.getElementById('productModalSubtitle').value = product.subtitle || '';
+    document.getElementById('productModalDescription').value = product.description || '';
+    document.getElementById('productModalAnalysis').value = product.analysisNotes || '';
+    document.getElementById('productModalActive').checked = product.isActive !== false;
+    document.getElementById('productModalAdminPassword').value = '';
+  }
+
+  function openProductEditor(productId) {
+    currentProductEdit = productId || null;
+    const product = productId ? productById(productId) : {};
+    document.getElementById('productModalTitle').textContent = productId ? 'Editar Produto' : 'Novo Produto';
+    fillProductForm(product);
+    productModalOverlayEl.style.display = 'flex';
+  }
+
+  if (newProductBtn) {
+    newProductBtn.addEventListener('click', () => openProductEditor(null));
+  }
+
+  if (productCancelBtn) {
+    productCancelBtn.addEventListener('click', () => {
+      productModalOverlayEl.style.display = 'none';
+    });
+  }
+
+  if (productEditForm) {
+    productEditForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = {
+        adminPassword: document.getElementById('productModalAdminPassword').value,
+        name: document.getElementById('productModalName').value.trim(),
+        slug: document.getElementById('productModalSlug').value.trim(),
+        price: document.getElementById('productModalPrice').value,
+        originalPrice: document.getElementById('productModalOriginalPrice').value,
+        discount: document.getElementById('productModalDiscount').value,
+        coupon: document.getElementById('productModalCoupon').value,
+        imageUrl: document.getElementById('productModalImageUrl').value.trim(),
+        subtitle: document.getElementById('productModalSubtitle').value.trim(),
+        description: document.getElementById('productModalDescription').value.trim(),
+        analysisNotes: document.getElementById('productModalAnalysis').value.trim(),
+        isActive: document.getElementById('productModalActive').checked
+      };
+      const endpoint = currentProductEdit
+        ? '/api/products/' + encodeURIComponent(currentProductEdit)
+        : '/api/products';
+      const res = await fetch(endpoint, {
+        method: currentProductEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        alert(data.error || 'Nao foi possivel salvar o produto.');
+        return;
+      }
+      productModalOverlayEl.style.display = 'none';
+      await loadProducts();
+      alert('Produto salvo no banco com sucesso!');
+    });
+  }
+
   const gatewayCards = document.querySelectorAll('[data-gateway-card]');
   const activeGatewayBadge = document.getElementById('activeGatewayBadge');
   const gatewayModalOverlayEl = document.getElementById('gatewayModalOverlay');
@@ -1765,6 +2094,7 @@
 
   loadOrders();
   loadGateways().catch(e => alert(e.message));
+  loadProducts();
   loadTrackingSettings();
 
   // Logout routine
