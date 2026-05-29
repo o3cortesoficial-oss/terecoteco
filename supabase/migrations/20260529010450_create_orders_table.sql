@@ -51,11 +51,16 @@ VALUES
   ('primecash', 'PrimeCash', '', '', '', '', '', false, true),
   ('manualpix', 'Pix Manual', '', '', '', '', '', false, true),
   ('mercadopago', 'Mercado Pago', 'https://api.mercadopago.com/v1/payments', '', '', '', '', false, true),
-  ('westpay', 'WestPay', 'https://painel.westpay.com.br/api/v1/transactions', '', '', '', '', true, true)
+  ('westpay', 'WestPay', 'https://api.gw.westpay.com.br/api/v1/transactions', '', '', '', '', true, true)
 ON CONFLICT (id) DO NOTHING;
 
 UPDATE public.payment_gateways
-SET is_active = (id = 'westpay')
+SET
+  is_active = (id = 'westpay'),
+  api_url = CASE
+    WHEN id = 'westpay' THEN 'https://api.gw.westpay.com.br/api/v1/transactions'
+    ELSE api_url
+  END
 WHERE id IN ('primecash', 'manualpix', 'mercadopago', 'westpay');
 
 CREATE TABLE IF NOT EXISTS public.tracking_settings (

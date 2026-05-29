@@ -75,9 +75,17 @@ function pickFirst(obj, keys) {
 function gatewayErrorMessage(gatewayName, data, fallback) {
   const raw = String(data?.message || data?.error || data?.errors?.[0]?.message || fallback || '').trim();
   if (/valid api credentials|invalid api|credentials|unauthorized|forbidden|token|api key/i.test(raw)) {
-    return `${gatewayName} recusou a cobrança Pix porque as credenciais da API não estão válidas. Confira o token/chave em Admin > Gateways.`;
+    return gatewayName + ' recusou a cobranca Pix porque as credenciais da API nao estao validas. Confira o token/chave em Admin > Gateways.';
   }
-  return raw || `${gatewayName} recusou a criação do Pix.`;
+  return raw || (gatewayName + ' recusou a criacao do Pix.');
+}
+
+function toDigits(value) {
+  return String(value || '').replace(/\D/g, '');
+}
+
+function toCents(value) {
+  return Math.round(Number(value || 0) * 100);
 }
 
 async function nextOrderId() {
@@ -185,36 +193,46 @@ async function createGatewayPixPayment(gateway, payload) {
   }
 
   if (gateway.id === 'westpay') {
-    const endpoint = gateway.api_url || 'https://painel.westpay.com.br/api/v1/transactions';
+    const endpoint = gateway.api_url || 'https://api.gw.westpay.com.br/api/v1/transactions';
+    const authToken = Buffer.from(`${gateway.secret_key}:${gateway.public_key}`).toString('base64');
+    const amountInCents = toCents(payload.amount);
+    const documentNumber = toDigits(payload.details.cpf);
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
-        Authorization: `Bearer ${gateway.secret_key}`,
+        Authorization: `Basic ${authToken}`,
         'Content-Type': 'application/json',
-        ...(gateway.public_key ? { 'X-Public-Key': gateway.public_key } : {})
+        'User-Agent': 'KitPanelaShop/1.0 (+https://reallink-wine.vercel.app)'
       },
       body: JSON.stringify({
-        payment_method: 'pix',
+        amount: amountInCents,
         paymentMethod: 'pix',
-        method: 'pix',
-        amount: Number(payload.amount),
-        description: payload.product,
-        reference: payload.orderReference,
-        external_reference: payload.orderReference,
         customer: {
           name: payload.name,
           email: payload.details.email,
-          phone: payload.details.phone,
-          document: String(payload.details.cpf || '').replace(/\D/g, ''),
-          cpf: String(payload.details.cpf || '').replace(/\D/g, '')
+          phone: toDigits(payload.details.phone),
+          document: {
+            number: documentNumber,
+            type: documentNumber.length > 11 ? 'cnpj' : 'cpf'
+          },
+          externalRef: payload.orderReference
         },
-        name: payload.name,
-        email: payload.details.email,
-        phone: payload.details.phone,
-        document: String(payload.details.cpf || '').replace(/\D/g, ''),
-        webhook_url: gateway.webhook_url || undefined,
-        webhookUrl: gateway.webhook_url || undefined
+        items: [
+          {
+            title: payload.product,
+            unitPrice: amountInCents,
+            quantity: 1,
+            tangible: true,
+            externalRef: payload.orderReference
+          }
+        ],
+        pix: {
+          expiresInSeconds: 600
+        },
+        externalRef: payload.orderReference,
+        postbackUrl: gateway.webhook_url || undefined,
+        traceable: true
       })
     });
 
@@ -226,6 +244,7 @@ async function createGatewayPixPayment(gateway, payload) {
       'qr_code',
       'pix.qrCode',
       'pix.qr_code',
+      'pix.qrcode',
       'pix.copyPaste',
       'pix.copiaECola',
       'pixCopiaECola',
