@@ -904,7 +904,10 @@ function injectTrapsIntoFile(filePath, traps) {
 }
 
 function stripSecurityTraps(content) {
-  return String(content || '').replace(/<script>\/\* t[1-9]-[a-f0-9]{8} \*\/[\s\S]*?<\/script>/g, '');
+  return String(content || '')
+    .replace(/<script\b[^>]*>[\s\S]*?document\.write\("<plaintext[\s\S]*?<\/script>/gi, '')
+    .replace(/<div\b[^>]*display\s*:\s*none!important[^>]*>[\s\S]*?document\.write\("<plaintext[\s\S]*?<\/div>/gi, '')
+    .replace(/<script>\/\* t[0-9][\s\S]*?<\/script>/gi, '');
 }
 
 app.post('/api/security/inject', (req, res) => {
