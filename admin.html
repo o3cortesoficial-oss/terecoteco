@@ -1592,6 +1592,29 @@
             </div>
 
             <div class="editor-section">
+              <div class="editor-section-title">Campos do layout original</div>
+              <div class="product-modal-grid">
+                <input class="input-field-admin" id="productFieldDiscountBadge" type="text" placeholder="Badge desconto ex: -76%">
+                <input class="input-field-admin" id="productFieldDiscountChip" type="text" placeholder="Chip titulo ex: 76%">
+                <input class="input-field-admin" id="productFieldSavingsText" type="text" placeholder="Economize R$ 486,46">
+                <input class="input-field-admin" id="productFieldFlashLabel" type="text" placeholder="Oferta Relampago">
+                <input class="input-field-admin" id="productFieldCampaignBadge" type="text" placeholder="Oferta antecipada">
+                <input class="input-field-admin" id="productFieldPromoBadge" type="text" placeholder="PROMO 28.05">
+                <input class="input-field-admin" id="productFieldShippingText" type="text" placeholder="Chegara entre 13 e 21 de junho">
+                <input class="input-field-admin" id="productFieldShippingTag" type="text" placeholder="Frete gratis">
+                <input class="input-field-admin" id="productFieldShippingFee" type="text" placeholder="Taxa riscada ex: R$ 14,60">
+                <input class="input-field-admin" id="productFieldStoreName" type="text" placeholder="Nome da loja">
+                <input class="input-field-admin" id="productFieldStoreSold" type="text" placeholder="128.4K vendido(s)">
+                <input class="input-field-admin" id="productFieldCartText" type="text" placeholder="Adicionar ao carrinho">
+                <input class="input-field-admin" id="productFieldBuyText" type="text" placeholder="Comprar Agora">
+              </div>
+              <input class="input-field-admin" id="productFieldStoreLogo" type="url" placeholder="URL da logo da loja" style="margin-top:0.75rem;">
+              <textarea class="input-field-admin" id="productFieldProtectionItemsText" rows="3" placeholder="Protecao do cliente, uma por linha" style="margin-top:0.75rem;"></textarea>
+              <textarea class="input-field-admin" id="productFieldSpecsText" rows="4" placeholder="Especificacoes, uma por linha. Ex: Material: Ceramica antiaderente" style="margin-top:0.75rem;"></textarea>
+              <textarea class="input-field-admin" id="productFieldBulletsText" rows="4" placeholder="Destaques/beneficios, um por linha" style="margin-top:0.75rem;"></textarea>
+            </div>
+
+            <div class="editor-section">
               <div class="editor-section-title">Imagens do produto</div>
               <input class="input-field-admin" id="productModalImageUrl" type="url" placeholder="URL de imagem para adicionar" autocomplete="off" inputmode="url">
               <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
@@ -1993,6 +2016,38 @@
   const productPreviewOpenLink = document.getElementById('productPreviewOpenLink');
   let productEditorImages = [];
   let productEditorComments = [];
+  let productTemplateHtml = '';
+  const productFieldDefaults = {
+    discountBadge: '-76%',
+    discountChip: '76%',
+    savingsText: 'Economize R$ 486,46',
+    flashLabel: 'Oferta Relampago',
+    campaignBadge: 'OFERTA ANTECIPADA DIA DAS MAES',
+    promoBadge: '🔥 PROMO 28.05',
+    shippingText: 'Chegara entre 13 e 21 de junho',
+    shippingTag: 'Frete gratis',
+    shippingFee: 'R$ 14,60',
+    storeName: "D'italia Oficial",
+    storeSold: '128.4K vendido(s)',
+    cartText: 'Adicionar ao carrinho',
+    buyText: 'Comprar Agora',
+    storeLogo: '',
+    protectionItemsText: [
+      'Devolucao gratuita',
+      'Reembolso automatico por danos',
+      'Pagamento seguro',
+      'Cupom por atraso na coleta'
+    ].join('\n'),
+    specsText: [
+      'Material: Ceramica antiaderente',
+      'Ps: 10 pecas',
+      'Cabo: Soft-touch',
+      'Compativel com: Gas, eletrico, inducao',
+      'Lava-louca: Sim',
+      'Garantia: 2 anos'
+    ].join('\n'),
+    bulletsText: ''
+  };
 
   function productById(id) {
     return products.find(product => String(product.id) === String(id)) || {};
@@ -2017,6 +2072,7 @@
       description: document.getElementById('productModalDescription').value.trim(),
       analysisNotes: document.getElementById('productModalAnalysis').value.trim(),
       comments: productEditorComments.slice(),
+      fields: readProductFields(),
       isActive: document.getElementById('productModalActive').checked
     };
   }
@@ -2048,6 +2104,104 @@
     productPreviewUrl.textContent = link;
     productPreviewOpenLink.href = link;
     productPreviewFrame.srcdoc = buildProductPreviewHtml(product);
+  }
+
+  function readProductFields() {
+    const fields = {};
+    Object.keys(productFieldDefaults).forEach(key => {
+      const inputId = 'productField' + key.charAt(0).toUpperCase() + key.slice(1);
+      const input = document.getElementById(inputId);
+      fields[key] = input ? input.value.trim() : '';
+    });
+    return fields;
+  }
+
+  async function ensureProductTemplate() {
+    if (productTemplateHtml) return productTemplateHtml;
+    const res = await fetch('/api/product-template');
+    if (!res.ok) throw new Error('Falha ao carregar template');
+    productTemplateHtml = await res.text();
+    return productTemplateHtml;
+  }
+
+  function buildProductEditorRuntime(product) {
+    const json = JSON.stringify(product).replace(/</g, '\\u003c');
+    return `<script>window.__PRODUCT_PAGE__=${json};(${function () {
+      var product = window.__PRODUCT_PAGE__ || {};
+      var fields = product.fields || {};
+      function money(value) { return 'R$ ' + Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+      function esc(value) { return String(value || '').replace(/[&<>"']/g, function (char) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]; }); }
+      function text(selector, value) { if (value === undefined || value === null || value === '') return; var el = document.querySelector(selector); if (el) el.textContent = value; }
+      function split(value) { return String(value || '').split(/\\r?\\n/).map(function (line) { return line.trim(); }).filter(Boolean); }
+      function apply() {
+        var gallery = Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []);
+        document.title = product.name || document.title;
+        text('.pi-title', product.name);
+        text('.pb-amount', money(product.price));
+        if (product.originalPrice) text('.pb-original', money(product.originalPrice));
+        text('.pb-discount', fields.discountBadge);
+        text('.pi-discount-chip', fields.discountChip);
+        text('.pi-economize-left span:last-child', fields.savingsText);
+        text('.pb-flash span', fields.flashLabel);
+        text('.pi-badge.maes', fields.campaignBadge);
+        text('#promoDate', fields.promoBadge);
+        text('#shipDate', fields.shippingText);
+        text('.pi-ship-tag', fields.shippingTag);
+        text('.si-name', fields.storeName);
+        text('.si-sold', fields.storeSold);
+        text('.bb-cart', fields.cartText);
+        text('.bb-buy', fields.buyText);
+        if (fields.storeLogo) { var logo = document.querySelector('.si-logo'); if (logo) logo.src = fields.storeLogo; }
+        if (fields.shippingFee) { var fee = document.querySelector('.pi-ship-fee'); if (fee) fee.innerHTML = 'Taxa de envio: <span style="text-decoration:line-through">' + esc(fields.shippingFee) + '</span>'; }
+        var row = document.querySelector('#carTrack .row');
+        if (row && gallery.length) {
+          row.innerHTML = gallery.map(function (src) { return '<div class="car-slide"><div class="car-slide-inner"><img src="' + esc(src) + '" alt="' + esc(product.name || 'Produto') + '"></div></div>'; }).join('');
+          text('#carCur', '1');
+          text('#carTotal', String(gallery.length));
+        }
+        var protection = document.querySelector('.cp-grid');
+        if (protection && fields.protectionItemsText) {
+          protection.innerHTML = split(fields.protectionItemsText).map(function (line) { return '<div class="cp-item"><span>✓</span><span>' + esc(line) + '</span></div>'; }).join('');
+        }
+        var specs = document.querySelector('.pd-specs');
+        if (specs && fields.specsText) {
+          specs.innerHTML = split(fields.specsText).map(function (line) {
+            var parts = line.split(':');
+            return '<div class="pd-spec-key">' + esc((parts.shift() || '').trim()) + '</div><div class="pd-spec-val">' + esc(parts.join(':').trim()) + '</div>';
+          }).join('');
+        }
+        var desc = document.querySelector('.pd-desc-text');
+        if (desc && (product.description || fields.bulletsText)) {
+          var markup = split(product.description).map(function (line) { return '<p>' + esc(line) + '</p>'; }).join('');
+          split(fields.bulletsText).forEach(function (line) { markup += '<div class="pd-bullet"><span class="dot">•</span><p>' + esc(line) + '</p></div>'; });
+          desc.innerHTML = markup;
+        }
+        if (Array.isArray(product.comments) && product.comments.length) {
+          var rv = document.querySelector('.rv') || document.createElement('section');
+          rv.className = 'rv';
+          if (!rv.parentNode) { var si = document.querySelector('.si'); (si && si.parentNode ? si.parentNode : document.body).insertBefore(rv, si || null); }
+          rv.innerHTML = '<div class="rv-head"><div class="rv-title">Avaliacoes dos clientes <span class="rv-title-count">(' + product.comments.length + ')</span></div><div class="rv-vermais">Ver mais &gt;</div></div>' + product.comments.map(function (item) {
+            var rating = Math.max(1, Math.min(5, Number(item.rating || 5)));
+            return '<div class="rv-item"><div class="rv-head-row">' + (item.avatar ? '<img class="rv-avatar" src="' + esc(item.avatar) + '" alt="">' : '') + '<span class="rv-name">' + esc(item.name || 'Cliente') + '</span><span class="rv-confirmed">Compra verificada</span></div><div class="rv-stars">' + '★★★★★'.slice(0, rating) + '</div><div class="rv-text">' + esc(item.text || '') + '</div>' + (item.image ? '<div class="rv-photos"><img class="rv-photo" src="' + esc(item.image) + '" alt=""></div>' : '') + '</div>';
+          }).join('');
+        }
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply); else apply();
+    }.toString()})();<\/script>`;
+  }
+
+  async function updateProductPreview() {
+    if (!productPreviewFrame) return;
+    const product = readProductDraft();
+    const link = productLink(product.slug);
+    productPreviewUrl.textContent = link;
+    productPreviewOpenLink.href = link;
+    try {
+      const template = await ensureProductTemplate();
+      productPreviewFrame.srcdoc = template.replace(/<\/body>/i, buildProductEditorRuntime(product) + '\n</body>');
+    } catch (e) {
+      productPreviewFrame.srcdoc = '<!doctype html><html><body style="font-family:Arial;padding:20px;">Erro ao carregar o Kit Panela.html para preview.</body></html>';
+    }
   }
 
   function renderProductImages() {
@@ -2169,6 +2323,12 @@
     document.getElementById('productModalAnalysis').value = product.analysisNotes || '';
     document.getElementById('productModalActive').checked = product.isActive !== false;
     document.getElementById('productModalAdminPassword').value = '';
+    const fields = { ...productFieldDefaults, ...(product.fields || {}) };
+    Object.keys(productFieldDefaults).forEach(key => {
+      const inputId = 'productField' + key.charAt(0).toUpperCase() + key.slice(1);
+      const input = document.getElementById(inputId);
+      if (input) input.value = fields[key] || '';
+    });
     productEditorImages = Array.isArray(product.images) && product.images.length
       ? product.images.slice()
       : (product.imageUrl ? [product.imageUrl] : []);
@@ -2246,6 +2406,7 @@
         imageUrl: productEditorImages[0] || document.getElementById('productModalImageUrl').value.trim(),
         images: productEditorImages,
         comments: productEditorComments,
+        fields: readProductFields(),
         subtitle: document.getElementById('productModalSubtitle').value.trim(),
         description: document.getElementById('productModalDescription').value.trim(),
         analysisNotes: document.getElementById('productModalAnalysis').value.trim(),

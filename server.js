@@ -67,6 +67,7 @@ function sanitizeGateway(row) {
 function sanitizeProduct(row) {
   const images = Array.isArray(row.images) ? row.images : [];
   const comments = Array.isArray(row.comments) ? row.comments : [];
+  const fields = row.fields && typeof row.fields === 'object' && !Array.isArray(row.fields) ? row.fields : {};
   return {
     id: row.id,
     slug: row.slug,
@@ -80,6 +81,7 @@ function sanitizeProduct(row) {
     imageUrl: row.image_url || '',
     images,
     comments,
+    fields,
     analysisNotes: row.analysis_notes || '',
     isActive: row.is_active !== false,
     viewCount: Number(row.view_count || 0),
@@ -87,6 +89,158 @@ function sanitizeProduct(row) {
     url: `/produto/${row.slug}`,
     updatedAt: row.updated_at
   };
+}
+
+function buildProductRuntimeScript(product) {
+  const productJson = JSON.stringify(product).replace(/</g, '\\u003c');
+  return `
+<script>
+window.__PRODUCT_PAGE__ = ${productJson};
+(function () {
+  var product = window.__PRODUCT_PAGE__ || {};
+  var fields = product.fields || {};
+  function money(value) {
+    return 'R$ ' + Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function text(selector, value) {
+    if (value === undefined || value === null || value === '') return;
+    var el = document.querySelector(selector);
+    if (el) el.textContent = value;
+  }
+  function html(selector, value) {
+    if (value === undefined || value === null || value === '') return;
+    var el = document.querySelector(selector);
+    if (el) el.innerHTML = value;
+  }
+  function attr(selector, name, value) {
+    if (!value) return;
+    var el = document.querySelector(selector);
+    if (el) el.setAttribute(name, value);
+  }
+  function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, function (char) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char];
+    });
+  }
+  function splitLines(value) {
+    return String(value || '').split(/\\r?\\n/).map(function (line) { return line.trim(); }).filter(Boolean);
+  }
+  function specsFromFields() {
+    if (Array.isArray(fields.specs)) return fields.specs;
+    return splitLines(fields.specsText).map(function (line) {
+      var parts = line.split(':');
+      return { key: (parts.shift() || '').trim(), value: parts.join(':').trim() };
+    }).filter(function (item) { return item.key || item.value; });
+  }
+  function renderSpecs() {
+    var specs = specsFromFields();
+    if (!specs.length) return;
+    var box = document.querySelector('.pd-specs');
+    if (!box) return;
+    box.innerHTML = specs.map(function (item) {
+      return '<div class="pd-spec-key">' + escapeHtml(item.key) + '</div><div class="pd-spec-val">' + escapeHtml(item.value) + '</div>';
+    }).join('');
+  }
+  function renderProtection() {
+    var items = splitLines(fields.protectionItemsText);
+    if (!items.length) return;
+    var box = document.querySelector('.cp-grid');
+    if (!box) return;
+    box.innerHTML = items.map(function (line) {
+      return '<div class="cp-item"><span>✓</span><span>' + escapeHtml(line) + '</span></div>';
+    }).join('');
+  }
+  function renderDescription() {
+    var desc = product.description || fields.description || '';
+    var bullets = Array.isArray(fields.bullets) ? fields.bullets : splitLines(fields.bulletsText);
+    if (!desc && !bullets.length) return;
+    var box = document.querySelector('.pd-desc-text');
+    if (!box) return;
+    var markup = '';
+    if (desc) {
+      splitLines(desc).forEach(function (line) {
+        markup += '<p>' + escapeHtml(line) + '</p>';
+      });
+    }
+    if (bullets.length) {
+      markup += '<h3>' + escapeHtml(fields.bulletsTitle || 'Destaques') + '</h3>';
+      bullets.forEach(function (line) {
+        markup += '<div class="pd-bullet"><span class="dot">•</span><p>' + escapeHtml(line) + '</p></div>';
+      });
+    }
+    box.innerHTML = markup;
+  }
+  function renderGallery() {
+    var gallery = Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []);
+    if (!gallery.length) return;
+    var row = document.querySelector('#carTrack .row');
+    if (!row) return;
+    row.innerHTML = gallery.map(function (src) {
+      return '<div class="car-slide"><div class="car-slide-inner"><img src="' + escapeHtml(src) + '" alt="' + escapeHtml(product.name || 'Produto') + '"></div></div>';
+    }).join('');
+    text('#carCur', '1');
+    text('#carTotal', String(gallery.length));
+  }
+  function renderComments() {
+    if (!Array.isArray(product.comments) || !product.comments.length) return;
+    var section = document.querySelector('.rv');
+    if (!section) {
+      section = document.createElement('section');
+      section.className = 'rv';
+      var store = document.querySelector('.si');
+      (store && store.parentNode ? store.parentNode : document.body).insertBefore(section, store || null);
+    }
+    var avg = product.comments.reduce(function (sum, item) { return sum + Number(item.rating || 5); }, 0) / product.comments.length;
+    var header = '<div class="rv-head"><div class="rv-title">Avaliacoes dos clientes <span class="rv-title-count">(' + product.comments.length + ')</span></div><div class="rv-vermais">Ver mais &gt;</div></div>'
+      + '<div class="rv-rating-row"><span class="rv-rating">' + avg.toFixed(1).replace('.', ',') + '</span><span class="rv-rating-of">/5</span><span class="rv-stars-row">★★★★★</span></div>';
+    var items = product.comments.map(function (item) {
+      var rating = Math.max(1, Math.min(5, Number(item.rating || 5)));
+      var photos = item.image ? '<div class="rv-photos"><img class="rv-photo" src="' + escapeHtml(item.image) + '" alt=""></div>' : '';
+      return '<div class="rv-item">'
+        + '<div class="rv-head-row">' + (item.avatar ? '<img class="rv-avatar" src="' + escapeHtml(item.avatar) + '" alt="">' : '')
+        + '<span class="rv-name">' + escapeHtml(item.name || 'Cliente') + '</span><span class="rv-confirmed">Compra verificada</span></div>'
+        + '<div class="rv-stars">' + '★★★★★'.slice(0, rating) + '</div>'
+        + '<div class="rv-text">' + escapeHtml(item.text || '') + '</div>' + photos + '</div>';
+    }).join('');
+    section.innerHTML = header + items;
+  }
+  function applyCheckoutLinks() {
+    var target = '/checkout?product=' + encodeURIComponent(product.slug || '');
+    document.querySelectorAll('.bb-cart, .bb-buy, a[href*="checkout"]').forEach(function (link) {
+      link.setAttribute('href', target);
+    });
+  }
+  function applyProduct() {
+    document.title = product.name || document.title;
+    text('.pi-title', product.name);
+    text('.pb-amount', money(product.price));
+    if (product.originalPrice) text('.pb-original', money(product.originalPrice));
+    text('.pb-discount', fields.discountBadge || (product.originalPrice ? '-' + Math.max(0, Math.round((1 - Number(product.price || 0) / Number(product.originalPrice || 1)) * 100)) + '%' : ''));
+    text('.pi-discount-chip', fields.discountChip || (product.originalPrice ? Math.max(0, Math.round((1 - Number(product.price || 0) / Number(product.originalPrice || 1)) * 100)) + '%' : ''));
+    var savings = Number(product.discount || 0) + Number(product.coupon || 0);
+    text('.pi-economize-left span:last-child', fields.savingsText || (savings ? 'Economize ' + money(savings) : 'Economize no pedido'));
+    text('.pb-flash span', fields.flashLabel || 'Oferta Relampago');
+    text('.pi-badge.maes', fields.campaignBadge || 'OFERTA ANTECIPADA DIA DAS MAES');
+    text('#promoDate', fields.promoBadge || '🔥 PROMO 28.05');
+    text('#shipDate', fields.shippingText || '');
+    text('.pi-ship-tag', fields.shippingTag || '');
+    text('.si-name', fields.storeName || '');
+    text('.si-sold', fields.storeSold || '');
+    text('.bb-cart', fields.cartText || '');
+    text('.bb-buy', fields.buyText || '');
+    if (fields.shippingFee) html('.pi-ship-fee', 'Taxa de envio: <span style="text-decoration:line-through">' + escapeHtml(fields.shippingFee) + '</span>');
+    attr('.si-logo', 'src', fields.storeLogo || '');
+    renderGallery();
+    renderProtection();
+    renderSpecs();
+    renderDescription();
+    renderComments();
+    applyCheckoutLinks();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyProduct);
+  else applyProduct();
+})();
+</script>`;
 }
 
 function slugify(value) {
@@ -577,6 +731,7 @@ app.post('/api/products', async (req, res) => {
       imageUrl,
       images,
       comments,
+      fields,
       analysisNotes,
       isActive
     } = req.body;
@@ -601,6 +756,7 @@ app.post('/api/products', async (req, res) => {
         image_url: imageUrl || '',
         images: Array.isArray(images) ? images : [],
         comments: Array.isArray(comments) ? comments : [],
+        fields: fields && typeof fields === 'object' && !Array.isArray(fields) ? fields : {},
         analysis_notes: analysisNotes || '',
         is_active: isActive !== false,
         updated_at: new Date().toISOString()
@@ -632,6 +788,7 @@ app.put('/api/products/:id', async (req, res) => {
       imageUrl,
       images,
       comments,
+      fields,
       analysisNotes,
       isActive
     } = req.body;
@@ -656,6 +813,7 @@ app.put('/api/products/:id', async (req, res) => {
         image_url: imageUrl || '',
         images: Array.isArray(images) ? images : [],
         comments: Array.isArray(comments) ? comments : [],
+        fields: fields && typeof fields === 'object' && !Array.isArray(fields) ? fields : {},
         analysis_notes: analysisNotes || '',
         is_active: isActive !== false,
         updated_at: new Date().toISOString()
@@ -777,6 +935,44 @@ app.get('/', (req, res) => {
 app.get('/checkout', (req, res) => {
   if (isVercelBot(req)) return res.sendFile(path.join(__dirname, 'white.html'));
   res.sendFile(CHECKOUT_PATH);
+});
+
+app.get('/api/product-template', (req, res) => {
+  res.type('html').sendFile(LANDING_PATH);
+});
+
+app.get('/produto/:slug', async (req, res, next) => {
+  try {
+    if (isVercelBot(req)) return res.sendFile(path.join(__dirname, 'white.html'));
+    if (!supabase) return res.sendFile(LANDING_PATH);
+
+    const { data, error } = await supabase
+      .from('product_pages')
+      .select('*')
+      .eq('slug', req.params.slug)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(404).send('Produto nao encontrado.');
+
+    supabase
+      .from('product_pages')
+      .update({ view_count: Number(data.view_count || 0) + 1 })
+      .eq('id', data.id)
+      .then(({ error: viewError }) => {
+        if (viewError) console.error('[PRODUCT] Error updating views:', viewError.message);
+      });
+
+    const product = sanitizeProduct(data);
+    let html = fs.readFileSync(LANDING_PATH, 'utf-8');
+    html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(product.name)}</title>`);
+    html = html.replace(/<\/body>/i, buildProductRuntimeScript(product) + '\n</body>');
+    return res.send(html);
+  } catch (e) {
+    if (res.headersSent) return next(e);
+    console.error('[PRODUCT] Error rendering product page:', e.message);
+    return res.status(500).send('Erro ao carregar produto.');
+  }
 });
 
 app.get('/produto/:slug', async (req, res) => {
