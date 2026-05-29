@@ -2032,6 +2032,8 @@
   const productPreviewOpenLink = document.getElementById('productPreviewOpenLink');
   let productEditorImages = [];
   let productEditorComments = [];
+  let productImagesDirty = false;
+  let productInitialImageUrl = '';
   let productTemplateHtml = '';
   const productFieldDefaults = {
     discountBadge: '-76%',
@@ -2420,6 +2422,7 @@
       row.innerHTML = `<img src="${src}" alt=""><div style="font-size:0.75rem;color:var(--slate-500);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Imagem ${index + 1}</div><button class="mini-remove-btn" type="button">Remover</button>`;
       row.querySelector('button').addEventListener('click', () => {
         productEditorImages.splice(index, 1);
+        productImagesDirty = true;
         renderProductImages();
         updateProductPreview();
       });
@@ -2525,6 +2528,7 @@
     document.getElementById('productModalDiscount').value = product.discount || '';
     document.getElementById('productModalCoupon').value = product.coupon || '';
     document.getElementById('productModalImageUrl').value = product.imageUrl || '';
+    productInitialImageUrl = product.imageUrl || '';
     document.getElementById('productModalSubtitle').value = product.subtitle || '';
     document.getElementById('productModalDescription').value = product.description || '';
     document.getElementById('productModalAnalysis').value = product.analysisNotes || '';
@@ -2545,6 +2549,7 @@
     productEditorImages = Array.isArray(product.images) && product.images.length
       ? product.images.slice()
       : (product.imageUrl ? [product.imageUrl] : []);
+    productImagesDirty = false;
     productEditorComments = Array.isArray(product.comments) && product.comments.length
       ? product.comments.map(comment => ({ ...comment }))
       : defaultProductComments.map(comment => ({ ...comment }));
@@ -2582,6 +2587,7 @@
     const url = input.value.trim();
     if (!url) return;
     productEditorImages.push(url);
+    productImagesDirty = true;
     input.value = '';
     renderProductImages();
     updateProductPreview();
@@ -2596,6 +2602,7 @@
       reader.readAsDataURL(file);
     }));
     productEditorImages.push(...await Promise.all(readers));
+    productImagesDirty = true;
     event.target.value = '';
     renderProductImages();
     updateProductPreview();
@@ -2618,8 +2625,6 @@
         originalPrice: document.getElementById('productModalOriginalPrice').value,
         discount: document.getElementById('productModalDiscount').value,
         coupon: document.getElementById('productModalCoupon').value,
-        imageUrl: productEditorImages[0] || document.getElementById('productModalImageUrl').value.trim(),
-        images: productEditorImages,
         comments: productEditorComments,
         fields: readProductFields(),
         elements: readProductElements(),
@@ -2628,17 +2633,29 @@
         analysisNotes: document.getElementById('productModalAnalysis').value.trim(),
         isActive: document.getElementById('productModalActive').checked
       };
+      const manualImageUrl = document.getElementById('productModalImageUrl').value.trim();
+      if (!currentProductEdit || productImagesDirty || manualImageUrl !== productInitialImageUrl) {
+        payload.imageUrl = productEditorImages[0] || manualImageUrl;
+        payload.images = productEditorImages;
+      }
       const endpoint = currentProductEdit
         ? '/api/products/' + encodeURIComponent(currentProductEdit)
         : '/api/products';
-      const res = await fetch(endpoint, {
-        method: currentProductEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json().catch(() => ({}));
+      let res;
+      let data = {};
+      try {
+        res = await fetch(endpoint, {
+          method: currentProductEdit ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        data = await res.json().catch(() => ({}));
+      } catch (e) {
+        alert('Falha de rede ao salvar produto: ' + e.message);
+        return;
+      }
       if (!res.ok || !data.success) {
-        alert(data.error || 'Nao foi possivel salvar o produto.');
+        alert((data.error || 'Nao foi possivel salvar o produto.') + ' Status: ' + res.status);
         return;
       }
       if (data.product) {
@@ -2649,6 +2666,10 @@
       }
       productModalOverlayEl.style.display = 'none';
       await loadProducts();
+      if (Array.isArray(data.omittedColumns) && data.omittedColumns.length) {
+        alert('Produto salvo parcialmente. Atualize a tabela product_pages no Supabase para salvar tambem: ' + data.omittedColumns.join(', '));
+        return;
+      }
       alert('Produto salvo no banco com sucesso!');
     });
   }

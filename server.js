@@ -21,7 +21,6 @@ const LANDING_PATH = path.join(__dirname, 'Kit Panela.html');
 
 app.disable('etag');
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(__dirname));
 
 function noStore(res) {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -29,6 +28,12 @@ function noStore(res) {
   res.set('Expires', '0');
   res.set('Surrogate-Control', 'no-store');
 }
+
+app.use(express.static(__dirname, {
+  etag: false,
+  lastModified: false,
+  setHeaders: res => noStore(res)
+}));
 
 function requireDatabase(res) {
   if (supabase) return true;
@@ -99,6 +104,74 @@ function sanitizeProduct(row) {
     url: `/produto/${row.slug}`,
     updatedAt: row.updated_at
   };
+}
+
+function productPayloadFromBody(body) {
+  const {
+    name,
+    slug,
+    subtitle,
+    description,
+    price,
+    originalPrice,
+    discount,
+    coupon,
+    imageUrl,
+    images,
+    comments,
+    fields,
+    elements,
+    analysisNotes,
+    isActive
+  } = body;
+  const hasOwn = key => Object.prototype.hasOwnProperty.call(body, key);
+  const row = {
+    slug: slugify(slug || name),
+    name,
+    subtitle: subtitle || '',
+    description: description || '',
+    price: Number(price || 0),
+    original_price: Number(originalPrice || 0),
+    discount: Number(discount || 0),
+    coupon: Number(coupon || 0),
+    analysis_notes: analysisNotes || '',
+    is_active: isActive !== false,
+    updated_at: new Date().toISOString()
+  };
+  if (hasOwn('imageUrl')) row.image_url = imageUrl || '';
+  if (hasOwn('images')) row.images = Array.isArray(images) ? images : [];
+  if (hasOwn('comments')) row.comments = Array.isArray(comments) ? comments : [];
+  if (hasOwn('fields')) row.fields = fields && typeof fields === 'object' && !Array.isArray(fields) ? fields : {};
+  if (hasOwn('elements')) row.elements = elements && typeof elements === 'object' && !Array.isArray(elements) ? elements : {};
+  return row;
+}
+
+function stripUnknownProductColumn(row, message) {
+  const lower = String(message || '').toLowerCase();
+  const optionalColumns = ['elements', 'fields', 'comments', 'images'];
+  const missing = optionalColumns.find(column => lower.includes(column));
+  if (!missing || !(missing in row)) return null;
+  delete row[missing];
+  if (missing === 'images') delete row.image_url;
+  return missing;
+}
+
+async function saveProductRow(operation, row, id) {
+  const payload = { ...row };
+  let lastError = null;
+  const omittedColumns = [];
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const query = operation === 'insert'
+      ? supabase.from('product_pages').insert(payload)
+      : supabase.from('product_pages').update(payload).eq('id', id);
+    const { data, error } = await query.select().single();
+    if (!error) return { data, omittedColumns };
+    lastError = error;
+    const omittedColumn = stripUnknownProductColumn(payload, error.message);
+    if (!omittedColumn) break;
+    omittedColumns.push(omittedColumn);
+  }
+  throw lastError;
 }
 
 function buildProductRuntimeScript(product) {
@@ -758,24 +831,7 @@ app.post('/api/products', async (req, res) => {
   try {
     noStore(res);
     if (!requireDatabase(res)) return;
-    const {
-      adminPassword,
-      name,
-      slug,
-      subtitle,
-      description,
-      price,
-      originalPrice,
-      discount,
-      coupon,
-      imageUrl,
-      images,
-      comments,
-      fields,
-      elements,
-      analysisNotes,
-      isActive
-    } = req.body;
+    const { adminPassword, name, price } = req.body;
     if (adminPassword !== adminSavePassword) {
       return res.status(403).json({ success: false, error: 'Senha incorreta.' });
     }
@@ -783,30 +839,8 @@ app.post('/api/products', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Informe nome e preco do produto.' });
     }
 
-    const { data, error } = await supabase
-      .from('product_pages')
-      .insert({
-        slug: slugify(slug || name),
-        name,
-        subtitle: subtitle || '',
-        description: description || '',
-        price: Number(price || 0),
-        original_price: Number(originalPrice || 0),
-        discount: Number(discount || 0),
-        coupon: Number(coupon || 0),
-        image_url: imageUrl || '',
-        images: Array.isArray(images) ? images : [],
-        comments: Array.isArray(comments) ? comments : [],
-        fields: fields && typeof fields === 'object' && !Array.isArray(fields) ? fields : {},
-        elements: elements && typeof elements === 'object' && !Array.isArray(elements) ? elements : {},
-        analysis_notes: analysisNotes || '',
-        is_active: isActive !== false,
-        updated_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-    if (error) throw error;
-    res.json({ success: true, product: sanitizeProduct(data) });
+    const { data, omittedColumns } = await saveProductRow('insert', productPayloadFromBody(req.body));
+    res.json({ success: true, product: sanitizeProduct(data), omittedColumns });
   } catch (e) {
     console.error('[PRODUCT] Error creating product:', e.message);
     res.status(500).json({ success: false, error: e.message });
@@ -818,24 +852,7 @@ app.put('/api/products/:id', async (req, res) => {
     noStore(res);
     if (!requireDatabase(res)) return;
     const { id } = req.params;
-    const {
-      adminPassword,
-      name,
-      slug,
-      subtitle,
-      description,
-      price,
-      originalPrice,
-      discount,
-      coupon,
-      imageUrl,
-      images,
-      comments,
-      fields,
-      elements,
-      analysisNotes,
-      isActive
-    } = req.body;
+    const { adminPassword, name, price } = req.body;
     if (adminPassword !== adminSavePassword) {
       return res.status(403).json({ success: false, error: 'Senha incorreta.' });
     }
@@ -843,31 +860,8 @@ app.put('/api/products/:id', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Informe nome e preco do produto.' });
     }
 
-    const { data, error } = await supabase
-      .from('product_pages')
-      .update({
-        slug: slugify(slug || name),
-        name,
-        subtitle: subtitle || '',
-        description: description || '',
-        price: Number(price || 0),
-        original_price: Number(originalPrice || 0),
-        discount: Number(discount || 0),
-        coupon: Number(coupon || 0),
-        image_url: imageUrl || '',
-        images: Array.isArray(images) ? images : [],
-        comments: Array.isArray(comments) ? comments : [],
-        fields: fields && typeof fields === 'object' && !Array.isArray(fields) ? fields : {},
-        elements: elements && typeof elements === 'object' && !Array.isArray(elements) ? elements : {},
-        analysis_notes: analysisNotes || '',
-        is_active: isActive !== false,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    res.json({ success: true, product: sanitizeProduct(data) });
+    const { data, omittedColumns } = await saveProductRow('update', productPayloadFromBody(req.body), id);
+    res.json({ success: true, product: sanitizeProduct(data), omittedColumns });
   } catch (e) {
     console.error('[PRODUCT] Error saving product:', e.message);
     res.status(500).json({ success: false, error: e.message });
