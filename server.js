@@ -8,6 +8,12 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { createClient } = require('@supabase/supabase-js');
+
+// Configured dynamically from environment in production
+const supabaseUrl = process.env.SUPABASE_URL || 'https://wmsndneicukvxsaiypyn.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indtc25kbmVpY3VrdnhzYWl5cHluIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDAwNjQ3NywiZXhwIjoyMDk1NTgyNDc3fQ.uhA--YbrHDBTMTIECacYPxrqnp4NIx-6n8WRZ4KYLZQ';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,121 +26,85 @@ const LANDING_PATH = path.join(__dirname, 'Kit Panela.html');
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// ─── Database Helpers ──────────────────────────────────────────────────────────
-
-function loadOrders() {
-  if (!fs.existsSync(DB_PATH)) {
-    // Initialize with baseline seed orders
-    const baseline = [
-      {
-        id: "#KP-1020",
-        name: "Roberto Alencar de Lima",
-        product: "Jogo Panelas Cerâmica 10 Peças (Preto Carbono)",
-        date: "27/05/2026 - 15:10",
-        amount: 61.90,
-        status: "declined",
-        details: { cpf: "123.456.789-00", email: "roberto@email.com", phone: "(11) 99999-0001", address: "Rua A, 10 - Centro, São Paulo / SP (CEP: 01310-100)", paymentMethod: "PIX" }
-      },
-      {
-        id: "#KP-1021",
-        name: "Mariana Dias Costa",
-        product: "Jogo Panelas Cerâmica 10 Peças (Vermelho Cereja)",
-        date: "27/05/2026 - 18:24",
-        amount: 61.90,
-        status: "approved",
-        details: { cpf: "234.567.890-01", email: "mariana@email.com", phone: "(11) 99999-0002", address: "Rua B, 20 - Jardim, Rio de Janeiro / RJ (CEP: 22210-010)", paymentMethod: "PIX" }
-      },
-      {
-        id: "#KP-1022",
-        name: "Luiz Henrique Silva",
-        product: "Jogo Panelas Cerâmica 10 Peças (Verde Esmeralda)",
-        date: "28/05/2026 - 11:30",
-        amount: 61.90,
-        status: "pending",
-        details: { cpf: "345.678.901-02", email: "luiz@email.com", phone: "(21) 99999-0003", address: "Av C, 30 - Vila, Belo Horizonte / MG (CEP: 30140-070)", paymentMethod: "PIX" }
-      },
-      {
-        id: "#KP-1023",
-        name: "Ana Paula de Souza",
-        product: "Jogo Panelas Cerâmica 10 Peças (Preto Carbono)",
-        date: "28/05/2026 - 12:15",
-        amount: 61.90,
-        status: "approved",
-        details: { cpf: "456.789.012-03", email: "ana@email.com", phone: "(31) 99999-0004", address: "Rua D, 40 - Bairro, Curitiba / PR (CEP: 80010-020)", paymentMethod: "CARD" }
-      },
-      {
-        id: "#KP-1024",
-        name: "Samuel Ramos dos Santos",
-        product: "Jogo Panelas Cerâmica 10 Peças (Vermelho Cereja)",
-        date: "28/05/2026 - 13:42",
-        amount: 61.90,
-        status: "approved",
-        details: { cpf: "567.890.123-04", email: "samuel@email.com", phone: "(41) 99999-0005", address: "Av E, 50 - Centro, Porto Alegre / RS (CEP: 90010-150)", paymentMethod: "PIX" }
-      }
-    ];
-    fs.writeFileSync(DB_PATH, JSON.stringify(baseline, null, 2), 'utf-8');
-    return baseline;
-  }
-  try {
-    return JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
-  } catch (e) {
-    console.error('[DB] Failed to parse orders.json:', e.message);
-    return [];
-  }
-}
-
-function saveOrders(orders) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(orders, null, 2), 'utf-8');
-}
-
-function generateNextId(orders) {
-  if (orders.length === 0) return '#KP-1025';
-  const lastOrder = orders[orders.length - 1];
-  const match = lastOrder.id.match(/\d+/);
-  const nextNum = match ? parseInt(match[0]) + 1 : 1025;
-  return `#KP-${nextNum}`;
-}
-
 // ─── API: GET /api/orders ──────────────────────────────────────────────────────
-app.get('/api/orders', (req, res) => {
+app.get('/api/orders', async (req, res) => {
   try {
-    const orders = loadOrders();
-    res.json({ success: true, orders });
+    const { data: orders, error } = await supabase
+      .from('orders')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) throw error;
+
+    // Map DB fields to what frontend expects
+    const mappedOrders = orders.map(o => ({
+      id: o.order_id,
+      name: o.customer_name,
+      product: o.product_name,
+      date: o.date,
+      amount: parseFloat(o.amount),
+      status: o.status
+    }));
+
+    res.json({ success: true, orders: mappedOrders });
   } catch (e) {
+    console.error('[DB] Error fetching orders:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
 
 // ─── API: POST /api/orders ─────────────────────────────────────────────────────
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', async (req, res) => {
   try {
-    const { name, product, amount, status, details } = req.body;
+    const { name, product, amount, status } = req.body;
 
     if (!name || !product || amount === undefined) {
       return res.status(400).json({ success: false, error: 'Missing required fields: name, product, amount.' });
     }
 
-    const orders = loadOrders();
-    const orderId = generateNextId(orders);
+    // Generate ID logic (fetch last order)
+    const { data: lastOrderData } = await supabase
+      .from('orders')
+      .select('order_id')
+      .order('id', { ascending: false })
+      .limit(1);
+    
+    let nextNum = 1025;
+    if (lastOrderData && lastOrderData.length > 0) {
+      const match = lastOrderData[0].order_id.match(/\d+/);
+      if (match) nextNum = parseInt(match[0]) + 1;
+    }
+    const orderId = `#KP-${nextNum}`;
 
     const now = new Date();
     const dateStr = now.toLocaleDateString('pt-BR') + ' - ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
     const newOrder = {
-      id: orderId,
-      name,
-      product,
+      order_id: orderId,
+      customer_name: name,
+      product_name: product,
       date: dateStr,
-      amount: parseFloat(amount),
-      status: status || 'pending',
-      details: details || {}
+      amount: amount.toString(),
+      status: status || 'pending'
     };
 
-    orders.push(newOrder);
-    saveOrders(orders);
+    const { error } = await supabase.from('orders').insert([newOrder]);
+    if (error) throw error;
 
     console.log(`[ORDER] New order created: ${orderId} — ${name} — R$ ${amount}`);
-    res.json({ success: true, order: newOrder });
+    
+    // Send back frontend format
+    res.json({ 
+      success: true, 
+      order: {
+        id: orderId,
+        name: name,
+        product: product,
+        date: dateStr,
+        amount: parseFloat(amount),
+        status: status || 'pending'
+      }
+    });
 
   } catch (e) {
     console.error('[ORDER] Error creating order:', e.message);
@@ -143,7 +113,7 @@ app.post('/api/orders', (req, res) => {
 });
 
 // ─── API: PATCH /api/orders/:id/status ────────────────────────────────────────
-app.patch('/api/orders/:id/status', (req, res) => {
+app.patch('/api/orders/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -153,18 +123,31 @@ app.patch('/api/orders/:id/status', (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid status. Use: approved, pending, or declined.' });
     }
 
-    const orders = loadOrders();
-    const orderIndex = orders.findIndex(o => o.id === decodeURIComponent(id));
+    const orderId = decodeURIComponent(id);
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ status: status })
+      .eq('order_id', orderId)
+      .select();
 
-    if (orderIndex === -1) {
+    if (error) throw error;
+    if (!data || data.length === 0) {
       return res.status(404).json({ success: false, error: 'Order not found.' });
     }
 
-    orders[orderIndex].status = status;
-    saveOrders(orders);
-
     console.log(`[ORDER] Status updated: ${id} → ${status}`);
-    res.json({ success: true, order: orders[orderIndex] });
+    
+    res.json({ 
+      success: true, 
+      order: {
+        id: data[0].order_id,
+        name: data[0].customer_name,
+        product: data[0].product_name,
+        date: data[0].date,
+        amount: parseFloat(data[0].amount),
+        status: data[0].status
+      }
+    });
 
   } catch (e) {
     console.error('[ORDER] Error updating status:', e.message);

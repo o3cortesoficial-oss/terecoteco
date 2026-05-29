@@ -308,7 +308,6 @@
       color: var(--slate-900);
     }
 
-    /* Footer copy */
     .footer-copy {
       text-align: center;
       margin-top: 2rem;
@@ -317,6 +316,7 @@
       font-weight: 500;
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -347,9 +347,9 @@
 
     <form id="loginForm">
       <div class="form-group">
-        <label class="form-label" for="username">Usuário</label>
+        <label class="form-label" for="email">E-mail Administrativo</label>
         <div class="input-wrapper">
-          <input class="input-field" type="text" id="username" name="username" placeholder="Digite seu usuário..." required autocomplete="username">
+          <input class="input-field" type="email" id="email" name="email" placeholder="Digite seu e-mail..." required autocomplete="email">
         </div>
       </div>
 
@@ -380,9 +380,9 @@
     <!-- Credential helper badge -->
     <div class="info-badge">
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
       </svg>
-      Acesso demo: <span>admin</span> / <span>admin123</span>
+      Acesso Seguro via <span>Supabase Auth</span>
     </div>
   </div>
 
@@ -392,10 +392,17 @@
 </div>
 
 <script>
-  // Simple check - if already logged in, skip login page
-  if (localStorage.getItem('admin_session') === 'true') {
-    window.location.href = 'admin.html';
-  }
+  // Initialize Supabase Client
+  const SUPABASE_URL = 'https://wmsndneicukvxsaiypyn.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indtc25kbmVpY3VrdnhzYWl5cHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDY0NzcsImV4cCI6MjA5NTU4MjQ3N30.5PWUb5GUgcfetn3f0PsO_mIwHU9bSZPAbomp4SGZoNk';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Check if already logged in via Supabase
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
+      window.location.href = 'admin.html';
+    }
+  });
 
   const loginForm = document.getElementById('loginForm');
   const submitBtn = document.getElementById('submitBtn');
@@ -422,10 +429,10 @@
   });
 
   // Handle Form Submission
-  loginForm.addEventListener('submit', (e) => {
+  loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const username = document.getElementById('username').value.trim();
+    const email = document.getElementById('email').value.trim();
     const password = passwordInput.value.trim();
 
     // Hide previous error state
@@ -436,31 +443,24 @@
     btnText.classList.add('loading');
     btnLoader.style.display = 'block';
 
-    // Mock network request latency for real-world authentication feel
-    setTimeout(() => {
-      if (username === 'admin' && password === 'admin123') {
-        // Store Session Token
-        localStorage.setItem('admin_session', 'true');
-        localStorage.setItem('admin_user', username);
-        
-        // Beautiful redirect transition
-        window.location.href = 'admin.html';
-      } else {
-        // Revert loading state
-        submitBtn.disabled = false;
-        btnText.classList.remove('loading');
-        btnLoader.style.display = 'none';
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
 
-        // Trigger gorgeous shake animated alert message
-        errorAlert.style.display = 'flex';
-        
-        if (username !== 'admin') {
-          errorMessage.textContent = 'Usuário não cadastrado.';
-        } else {
-          errorMessage.textContent = 'Senha incorreta para o administrador.';
-        }
-      }
-    }, 1200);
+    if (error) {
+      // Revert loading state
+      submitBtn.disabled = false;
+      btnText.classList.remove('loading');
+      btnLoader.style.display = 'none';
+
+      // Trigger gorgeous shake animated alert message
+      errorAlert.style.display = 'flex';
+      errorMessage.textContent = 'E-mail ou senha incorretos.';
+    } else {
+      // Beautiful redirect transition
+      window.location.href = 'admin.html';
+    }
   });
 </script>
 </body>

@@ -896,6 +896,7 @@
       transition: width 0.1s linear;
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -1484,18 +1485,25 @@
 </div>
 
 <script>
+  // Initialize Supabase Client
+  const SUPABASE_URL = 'https://wmsndneicukvxsaiypyn.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indtc25kbmVpY3VrdnhzYWl5cHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDY0NzcsImV4cCI6MjA5NTU4MjQ3N30.5PWUb5GUgcfetn3f0PsO_mIwHU9bSZPAbomp4SGZoNk';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
   // Auth Guard Execution: Prevent unauthenticated browsing
-  if (localStorage.getItem('admin_session') !== 'true') {
-    window.location.href = 'login.html';
-  } else {
-    // Session exists - hide overlay
-    document.getElementById('authShield').style.display = 'none';
-    
-    // Set custom Username
-    const savedUser = localStorage.getItem('admin_user') || 'Administrador';
-    document.getElementById('sidebarUsername').textContent = savedUser;
-    document.getElementById('avatarLetter').textContent = savedUser.charAt(0).toUpperCase();
-  }
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (!session) {
+      window.location.href = 'login.html';
+    } else {
+      // Session exists - hide overlay
+      document.getElementById('authShield').style.display = 'none';
+      
+      // Set custom Username
+      const savedUser = session.user.email;
+      document.getElementById('sidebarUsername').textContent = savedUser;
+      document.getElementById('avatarLetter').textContent = savedUser.charAt(0).toUpperCase();
+    }
+  });
 
   // ==========================================
   // Live Backend API Orders Manager
@@ -1831,9 +1839,8 @@
   }
 
   // Logout routine
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.removeItem('admin_session');
-    localStorage.removeItem('admin_user');
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
     window.location.href = 'login.html';
   });
 
