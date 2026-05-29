@@ -68,6 +68,7 @@ function sanitizeProduct(row) {
   const images = Array.isArray(row.images) ? row.images : [];
   const comments = Array.isArray(row.comments) ? row.comments : [];
   const fields = row.fields && typeof row.fields === 'object' && !Array.isArray(row.fields) ? row.fields : {};
+  const elements = row.elements && typeof row.elements === 'object' && !Array.isArray(row.elements) ? row.elements : {};
   return {
     id: row.id,
     slug: row.slug,
@@ -82,6 +83,7 @@ function sanitizeProduct(row) {
     images,
     comments,
     fields,
+    elements,
     analysisNotes: row.analysis_notes || '',
     isActive: row.is_active !== false,
     viewCount: Number(row.view_count || 0),
@@ -99,6 +101,8 @@ window.__PRODUCT_PAGE__ = ${productJson};
 (function () {
   var product = window.__PRODUCT_PAGE__ || {};
   var fields = product.fields || {};
+  var elements = product.elements || {};
+  var elementDefaults = { gallery: true, priceBar: true, savings: true, badges: true, shipping: true, protection: true, store: true, comments: true, details: true, cartButton: true };
   function money(value) {
     return 'R$ ' + Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
@@ -124,6 +128,20 @@ window.__PRODUCT_PAGE__ = ${productJson};
   }
   function splitLines(value) {
     return String(value || '').split(/\\r?\\n/).map(function (line) { return line.trim(); }).filter(Boolean);
+  }
+  function enabled(key) {
+    return elements[key] === undefined ? elementDefaults[key] !== false : elements[key] !== false;
+  }
+  function setVisible(selector, key) {
+    document.querySelectorAll(selector).forEach(function (el) {
+      el.style.display = enabled(key) ? '' : 'none';
+    });
+  }
+  function polishButtons() {
+    var style = document.getElementById('product-page-polish') || document.createElement('style');
+    style.id = 'product-page-polish';
+    style.textContent = '.bb-cart{white-space:normal!important;text-overflow:clip!important;line-height:1.05!important;font-size:11px!important;text-align:center}.bb-buy{font-size:13px!important}.rv{background:#fff}.rv-stars,.rv-stars-row{letter-spacing:1px}';
+    document.head.appendChild(style);
   }
   function specsFromFields() {
     if (Array.isArray(fields.specs)) return fields.specs;
@@ -228,6 +246,7 @@ window.__PRODUCT_PAGE__ = ${productJson};
     text('.si-sold', fields.storeSold || '');
     text('.bb-cart', fields.cartText || '');
     text('.bb-buy', fields.buyText || '');
+    polishButtons();
     if (fields.shippingFee) html('.pi-ship-fee', 'Taxa de envio: <span style="text-decoration:line-through">' + escapeHtml(fields.shippingFee) + '</span>');
     attr('.si-logo', 'src', fields.storeLogo || '');
     renderGallery();
@@ -235,6 +254,16 @@ window.__PRODUCT_PAGE__ = ${productJson};
     renderSpecs();
     renderDescription();
     renderComments();
+    setVisible('.car', 'gallery');
+    setVisible('.pb', 'priceBar');
+    setVisible('.pi-economize', 'savings');
+    setVisible('.pi-badges', 'badges');
+    setVisible('.pi-ship', 'shipping');
+    setVisible('.cp', 'protection');
+    setVisible('.si', 'store');
+    setVisible('.rv', 'comments');
+    setVisible('.pd,.pd-terms', 'details');
+    setVisible('.bb-cart', 'cartButton');
     applyCheckoutLinks();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyProduct);
@@ -732,6 +761,7 @@ app.post('/api/products', async (req, res) => {
       images,
       comments,
       fields,
+      elements,
       analysisNotes,
       isActive
     } = req.body;
@@ -757,6 +787,7 @@ app.post('/api/products', async (req, res) => {
         images: Array.isArray(images) ? images : [],
         comments: Array.isArray(comments) ? comments : [],
         fields: fields && typeof fields === 'object' && !Array.isArray(fields) ? fields : {},
+        elements: elements && typeof elements === 'object' && !Array.isArray(elements) ? elements : {},
         analysis_notes: analysisNotes || '',
         is_active: isActive !== false,
         updated_at: new Date().toISOString()
@@ -789,6 +820,7 @@ app.put('/api/products/:id', async (req, res) => {
       images,
       comments,
       fields,
+      elements,
       analysisNotes,
       isActive
     } = req.body;
@@ -814,6 +846,7 @@ app.put('/api/products/:id', async (req, res) => {
         images: Array.isArray(images) ? images : [],
         comments: Array.isArray(comments) ? comments : [],
         fields: fields && typeof fields === 'object' && !Array.isArray(fields) ? fields : {},
+        elements: elements && typeof elements === 'object' && !Array.isArray(elements) ? elements : {},
         analysis_notes: analysisNotes || '',
         is_active: isActive !== false,
         updated_at: new Date().toISOString()

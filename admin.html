@@ -1615,6 +1615,22 @@
             </div>
 
             <div class="editor-section">
+              <div class="editor-section-title">Ativar ou desativar blocos</div>
+              <div class="product-modal-grid">
+                <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.8125rem;font-weight:800;color:var(--slate-700);"><input type="checkbox" id="productElementGallery" checked> Galeria</label>
+                <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.8125rem;font-weight:800;color:var(--slate-700);"><input type="checkbox" id="productElementPriceBar" checked> Barra de preco</label>
+                <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.8125rem;font-weight:800;color:var(--slate-700);"><input type="checkbox" id="productElementSavings" checked> Economia</label>
+                <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.8125rem;font-weight:800;color:var(--slate-700);"><input type="checkbox" id="productElementBadges" checked> Selos</label>
+                <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.8125rem;font-weight:800;color:var(--slate-700);"><input type="checkbox" id="productElementShipping" checked> Frete</label>
+                <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.8125rem;font-weight:800;color:var(--slate-700);"><input type="checkbox" id="productElementProtection" checked> Protecao</label>
+                <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.8125rem;font-weight:800;color:var(--slate-700);"><input type="checkbox" id="productElementStore" checked> Loja</label>
+                <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.8125rem;font-weight:800;color:var(--slate-700);"><input type="checkbox" id="productElementComments" checked> Comentarios</label>
+                <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.8125rem;font-weight:800;color:var(--slate-700);"><input type="checkbox" id="productElementDetails" checked> Sobre o produto</label>
+                <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.8125rem;font-weight:800;color:var(--slate-700);"><input type="checkbox" id="productElementCartButton" checked> Botao carrinho</label>
+              </div>
+            </div>
+
+            <div class="editor-section">
               <div class="editor-section-title">Imagens do produto</div>
               <input class="input-field-admin" id="productModalImageUrl" type="url" placeholder="URL de imagem para adicionar" autocomplete="off" inputmode="url">
               <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
@@ -2029,7 +2045,7 @@
     shippingFee: 'R$ 14,60',
     storeName: "D'italia Oficial",
     storeSold: '128.4K vendido(s)',
-    cartText: 'Adicionar ao carrinho',
+    cartText: 'Carrinho',
     buyText: 'Comprar Agora',
     storeLogo: '',
     protectionItemsText: [
@@ -2048,6 +2064,43 @@
     ].join('\n'),
     bulletsText: ''
   };
+
+  const productElementDefaults = {
+    gallery: true,
+    priceBar: true,
+    savings: true,
+    badges: true,
+    shipping: true,
+    protection: true,
+    store: true,
+    comments: true,
+    details: true,
+    cartButton: true
+  };
+
+  const defaultProductComments = [
+    {
+      name: 'Mariana S.',
+      text: 'Chegou bem embalado e o jogo e lindo. Usei no fogao e nao grudou nada.',
+      rating: 5,
+      avatar: '',
+      image: ''
+    },
+    {
+      name: 'Patricia M.',
+      text: 'As panelas sao leves, bonitas e faceis de limpar. Pelo valor compensou muito.',
+      rating: 5,
+      avatar: '',
+      image: ''
+    },
+    {
+      name: 'Renata A.',
+      text: 'Comprei para trocar as antigas. O acabamento branco com cabo amadeirado ficou perfeito na cozinha.',
+      rating: 5,
+      avatar: '',
+      image: ''
+    }
+  ];
 
   function productById(id) {
     return products.find(product => String(product.id) === String(id)) || {};
@@ -2073,6 +2126,7 @@
       analysisNotes: document.getElementById('productModalAnalysis').value.trim(),
       comments: productEditorComments.slice(),
       fields: readProductFields(),
+      elements: readProductElements(),
       isActive: document.getElementById('productModalActive').checked
     };
   }
@@ -2116,6 +2170,16 @@
     return fields;
   }
 
+  function readProductElements() {
+    const elements = {};
+    Object.keys(productElementDefaults).forEach(key => {
+      const inputId = 'productElement' + key.charAt(0).toUpperCase() + key.slice(1);
+      const input = document.getElementById(inputId);
+      elements[key] = input ? input.checked : productElementDefaults[key];
+    });
+    return elements;
+  }
+
   async function ensureProductTemplate() {
     if (productTemplateHtml) return productTemplateHtml;
     const res = await fetch('/api/product-template');
@@ -2129,10 +2193,20 @@
     return `<script>window.__PRODUCT_PAGE__=${json};(${function () {
       var product = window.__PRODUCT_PAGE__ || {};
       var fields = product.fields || {};
+      var elements = product.elements || {};
+      var defaults = { gallery: true, priceBar: true, savings: true, badges: true, shipping: true, protection: true, store: true, comments: true, details: true, cartButton: true };
       function money(value) { return 'R$ ' + Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
       function esc(value) { return String(value || '').replace(/[&<>"']/g, function (char) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]; }); }
       function text(selector, value) { if (value === undefined || value === null || value === '') return; var el = document.querySelector(selector); if (el) el.textContent = value; }
       function split(value) { return String(value || '').split(/\\r?\\n/).map(function (line) { return line.trim(); }).filter(Boolean); }
+      function enabled(key) { return elements[key] === undefined ? defaults[key] !== false : elements[key] !== false; }
+      function setVisible(selector, key) { document.querySelectorAll(selector).forEach(function (el) { el.style.display = enabled(key) ? '' : 'none'; }); }
+      function polishButtons() {
+        var style = document.getElementById('product-editor-polish') || document.createElement('style');
+        style.id = 'product-editor-polish';
+        style.textContent = '.bb-cart{white-space:normal!important;text-overflow:clip!important;line-height:1.05!important;font-size:11px!important;text-align:center}.bb-buy{font-size:13px!important}.rv{background:#fff}.rv-stars,.rv-stars-row{letter-spacing:1px}';
+        document.head.appendChild(style);
+      }
       function apply() {
         var gallery = Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []);
         document.title = product.name || document.title;
@@ -2151,6 +2225,7 @@
         text('.si-sold', fields.storeSold);
         text('.bb-cart', fields.cartText);
         text('.bb-buy', fields.buyText);
+        polishButtons();
         if (fields.storeLogo) { var logo = document.querySelector('.si-logo'); if (logo) logo.src = fields.storeLogo; }
         if (fields.shippingFee) { var fee = document.querySelector('.pi-ship-fee'); if (fee) fee.innerHTML = 'Taxa de envio: <span style="text-decoration:line-through">' + esc(fields.shippingFee) + '</span>'; }
         var row = document.querySelector('#carTrack .row');
@@ -2185,6 +2260,16 @@
             return '<div class="rv-item"><div class="rv-head-row">' + (item.avatar ? '<img class="rv-avatar" src="' + esc(item.avatar) + '" alt="">' : '') + '<span class="rv-name">' + esc(item.name || 'Cliente') + '</span><span class="rv-confirmed">Compra verificada</span></div><div class="rv-stars">' + '★★★★★'.slice(0, rating) + '</div><div class="rv-text">' + esc(item.text || '') + '</div>' + (item.image ? '<div class="rv-photos"><img class="rv-photo" src="' + esc(item.image) + '" alt=""></div>' : '') + '</div>';
           }).join('');
         }
+        setVisible('.car', 'gallery');
+        setVisible('.pb', 'priceBar');
+        setVisible('.pi-economize', 'savings');
+        setVisible('.pi-badges', 'badges');
+        setVisible('.pi-ship', 'shipping');
+        setVisible('.cp', 'protection');
+        setVisible('.si', 'store');
+        setVisible('.rv', 'comments');
+        setVisible('.pd,.pd-terms', 'details');
+        setVisible('.bb-cart', 'cartButton');
       }
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply); else apply();
     }.toString()})();<\/script>`;
@@ -2214,6 +2299,7 @@
     const doc = productPreviewFrame && productPreviewFrame.contentDocument;
     if (!doc) return;
     const fields = product.fields || {};
+    const elements = product.elements || {};
     const money = value => 'R$ ' + Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const text = (selector, value) => {
       if (value === undefined || value === null || value === '') return;
@@ -2222,6 +2308,17 @@
     };
     const split = value => String(value || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
     const esc = value => String(value || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+    const enabled = key => elements[key] === undefined ? productElementDefaults[key] !== false : elements[key] !== false;
+    const setVisible = (selector, key) => {
+      doc.querySelectorAll(selector).forEach(el => { el.style.display = enabled(key) ? '' : 'none'; });
+    };
+    let style = doc.getElementById('product-editor-polish');
+    if (!style) {
+      style = doc.createElement('style');
+      style.id = 'product-editor-polish';
+      doc.head.appendChild(style);
+    }
+    style.textContent = '.bb-cart{white-space:normal!important;text-overflow:clip!important;line-height:1.05!important;font-size:11px!important;text-align:center}.bb-buy{font-size:13px!important}.rv{background:#fff}.rv-stars,.rv-stars-row{letter-spacing:1px}';
 
     doc.title = product.name || doc.title;
     text('.pi-title', product.name);
@@ -2272,6 +2369,46 @@
       split(fields.bulletsText).forEach(line => { markup += '<div class="pd-bullet"><span class="dot">•</span><p>' + esc(line) + '</p></div>'; });
       desc.innerHTML = markup;
     }
+    renderPreviewComments(doc, product.comments || []);
+    setVisible('.car', 'gallery');
+    setVisible('.pb', 'priceBar');
+    setVisible('.pi-economize', 'savings');
+    setVisible('.pi-badges', 'badges');
+    setVisible('.pi-ship', 'shipping');
+    setVisible('.cp', 'protection');
+    setVisible('.si', 'store');
+    setVisible('.rv', 'comments');
+    setVisible('.pd,.pd-terms', 'details');
+    setVisible('.bb-cart', 'cartButton');
+  }
+
+  function renderPreviewComments(doc, comments) {
+    const list = Array.isArray(comments) ? comments : [];
+    let section = doc.querySelector('.rv');
+    if (!section) {
+      section = doc.createElement('section');
+      section.className = 'rv';
+      const store = doc.querySelector('.si');
+      (store && store.parentNode ? store.parentNode : doc.body).insertBefore(section, store || null);
+    }
+    if (!list.length) {
+      section.innerHTML = '';
+      return;
+    }
+    const esc = value => String(value || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+    const avg = list.reduce((sum, item) => sum + Number(item.rating || 5), 0) / list.length;
+    section.innerHTML = '<div class="rv-head"><div class="rv-title">Avaliacoes dos clientes <span class="rv-title-count">(' + list.length + ')</span></div><div class="rv-vermais">Ver mais &gt;</div></div>'
+      + '<div class="rv-rating-row"><span class="rv-rating">' + avg.toFixed(1).replace('.', ',') + '</span><span class="rv-rating-of">/5</span><span class="rv-stars-row">★★★★★</span></div>'
+      + list.map(item => {
+        const rating = Math.max(1, Math.min(5, Number(item.rating || 5)));
+        return '<div class="rv-item"><div class="rv-head-row">'
+          + (item.avatar ? '<img class="rv-avatar" src="' + esc(item.avatar) + '" alt="">' : '')
+          + '<span class="rv-name">' + esc(item.name || 'Cliente') + '</span><span class="rv-confirmed">Compra verificada</span></div>'
+          + '<div class="rv-stars">' + '★★★★★'.slice(0, rating) + '</div>'
+          + '<div class="rv-text">' + esc(item.text || '') + '</div>'
+          + (item.image ? '<div class="rv-photos"><img class="rv-photo" src="' + esc(item.image) + '" alt=""></div>' : '')
+          + '</div>';
+      }).join('');
   }
 
   function renderProductImages() {
@@ -2399,10 +2536,18 @@
       const input = document.getElementById(inputId);
       if (input) input.value = fields[key] || '';
     });
+    const elements = { ...productElementDefaults, ...(product.elements || {}) };
+    Object.keys(productElementDefaults).forEach(key => {
+      const inputId = 'productElement' + key.charAt(0).toUpperCase() + key.slice(1);
+      const input = document.getElementById(inputId);
+      if (input) input.checked = elements[key] !== false;
+    });
     productEditorImages = Array.isArray(product.images) && product.images.length
       ? product.images.slice()
       : (product.imageUrl ? [product.imageUrl] : []);
-    productEditorComments = Array.isArray(product.comments) ? product.comments.map(comment => ({ ...comment })) : [];
+    productEditorComments = Array.isArray(product.comments) && product.comments.length
+      ? product.comments.map(comment => ({ ...comment }))
+      : defaultProductComments.map(comment => ({ ...comment }));
     renderProductImages();
     renderProductComments();
     updateProductPreview();
@@ -2477,6 +2622,7 @@
         images: productEditorImages,
         comments: productEditorComments,
         fields: readProductFields(),
+        elements: readProductElements(),
         subtitle: document.getElementById('productModalSubtitle').value.trim(),
         description: document.getElementById('productModalDescription').value.trim(),
         analysisNotes: document.getElementById('productModalAnalysis').value.trim(),

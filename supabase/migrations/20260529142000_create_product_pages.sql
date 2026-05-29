@@ -12,6 +12,7 @@ create table if not exists public.product_pages (
   images jsonb not null default '[]'::jsonb,
   comments jsonb not null default '[]'::jsonb,
   fields jsonb not null default '{}'::jsonb,
+  elements jsonb not null default '{}'::jsonb,
   analysis_notes text default '',
   is_active boolean not null default true,
   view_count integer not null default 0,
