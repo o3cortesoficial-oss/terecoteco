@@ -2507,7 +2507,7 @@
   async function loadProducts() {
     if (productsTableBody) productsTableBody.innerHTML = '<tr><td colspan="6">Carregando produtos reais...</td></tr>';
     try {
-      const res = await fetch('/api/products');
+      const res = await fetch('/api/products?t=' + Date.now(), { cache: 'no-store' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) throw new Error(data.error || 'Falha ao carregar produtos.');
       products = Array.isArray(data.products) ? data.products : [];
@@ -2640,6 +2640,12 @@
       if (!res.ok || !data.success) {
         alert(data.error || 'Nao foi possivel salvar o produto.');
         return;
+      }
+      if (data.product) {
+        const index = products.findIndex(product => String(product.id) === String(data.product.id));
+        if (index >= 0) products[index] = data.product;
+        else products.unshift(data.product);
+        renderProducts(products);
       }
       productModalOverlayEl.style.display = 'none';
       await loadProducts();

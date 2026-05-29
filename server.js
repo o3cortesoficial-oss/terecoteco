@@ -19,8 +19,16 @@ const PORT = process.env.PORT || 3000;
 const CHECKOUT_PATH = path.join(__dirname, 'checkout.html');
 const LANDING_PATH = path.join(__dirname, 'Kit Panela.html');
 
-app.use(express.json({ limit: '1mb' }));
+app.disable('etag');
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
+
+function noStore(res) {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.set('Surrogate-Control', 'no-store');
+}
 
 function requireDatabase(res) {
   if (supabase) return true;
@@ -165,7 +173,7 @@ window.__PRODUCT_PAGE__ = ${productJson};
     var box = document.querySelector('.cp-grid');
     if (!box) return;
     box.innerHTML = items.map(function (line) {
-      return '<div class="cp-item"><span>✓</span><span>' + escapeHtml(line) + '</span></div>';
+      return '<div class="cp-item"><span>&#10003;</span><span>' + escapeHtml(line) + '</span></div>';
     }).join('');
   }
   function renderDescription() {
@@ -183,7 +191,7 @@ window.__PRODUCT_PAGE__ = ${productJson};
     if (bullets.length) {
       markup += '<h3>' + escapeHtml(fields.bulletsTitle || 'Destaques') + '</h3>';
       bullets.forEach(function (line) {
-        markup += '<div class="pd-bullet"><span class="dot">•</span><p>' + escapeHtml(line) + '</p></div>';
+        markup += '<div class="pd-bullet"><span class="dot">&bull;</span><p>' + escapeHtml(line) + '</p></div>';
       });
     }
     box.innerHTML = markup;
@@ -209,15 +217,16 @@ window.__PRODUCT_PAGE__ = ${productJson};
       (store && store.parentNode ? store.parentNode : document.body).insertBefore(section, store || null);
     }
     var avg = product.comments.reduce(function (sum, item) { return sum + Number(item.rating || 5); }, 0) / product.comments.length;
-    var header = '<div class="rv-head"><div class="rv-title">Avaliacoes dos clientes <span class="rv-title-count">(' + product.comments.length + ')</span></div><div class="rv-vermais">Ver mais &gt;</div></div>'
-      + '<div class="rv-rating-row"><span class="rv-rating">' + avg.toFixed(1).replace('.', ',') + '</span><span class="rv-rating-of">/5</span><span class="rv-stars-row">★★★★★</span></div>';
+    var stars = '&#9733;&#9733;&#9733;&#9733;&#9733;';
+    var header = '<div class="rv-head"><div class="rv-title">Avalia&ccedil;&otilde;es dos clientes <span class="rv-title-count">(' + product.comments.length + ')</span></div><div class="rv-vermais">Ver mais &gt;</div></div>'
+      + '<div class="rv-rating-row"><span class="rv-rating">' + avg.toFixed(1).replace('.', ',') + '</span><span class="rv-rating-of">/5</span><span class="rv-stars-row">' + stars + '</span></div>';
     var items = product.comments.map(function (item) {
       var rating = Math.max(1, Math.min(5, Number(item.rating || 5)));
       var photos = item.image ? '<div class="rv-photos"><img class="rv-photo" src="' + escapeHtml(item.image) + '" alt=""></div>' : '';
       return '<div class="rv-item">'
         + '<div class="rv-head-row">' + (item.avatar ? '<img class="rv-avatar" src="' + escapeHtml(item.avatar) + '" alt="">' : '')
         + '<span class="rv-name">' + escapeHtml(item.name || 'Cliente') + '</span><span class="rv-confirmed">Compra verificada</span></div>'
-        + '<div class="rv-stars">' + '★★★★★'.slice(0, rating) + '</div>'
+        + '<div class="rv-stars">' + Array(rating + 1).join('&#9733;') + '</div>'
         + '<div class="rv-text">' + escapeHtml(item.text || '') + '</div>' + photos + '</div>';
     }).join('');
     section.innerHTML = header + items;
@@ -731,6 +740,7 @@ app.put('/api/gateways/:id', async (req, res) => {
 
 app.get('/api/products', async (req, res) => {
   try {
+    noStore(res);
     if (!requireDatabase(res)) return;
     const { data, error } = await supabase
       .from('product_pages')
@@ -746,6 +756,7 @@ app.get('/api/products', async (req, res) => {
 
 app.post('/api/products', async (req, res) => {
   try {
+    noStore(res);
     if (!requireDatabase(res)) return;
     const {
       adminPassword,
@@ -804,6 +815,7 @@ app.post('/api/products', async (req, res) => {
 
 app.put('/api/products/:id', async (req, res) => {
   try {
+    noStore(res);
     if (!requireDatabase(res)) return;
     const { id } = req.params;
     const {
@@ -978,12 +990,14 @@ app.get('/checkout', (req, res) => {
 });
 
 app.get('/api/product-template', (req, res) => {
+  noStore(res);
   const html = stripSecurityTraps(fs.readFileSync(LANDING_PATH, 'utf-8'));
   res.type('html').send(html);
 });
 
 app.get('/produto/:slug', async (req, res, next) => {
   try {
+    noStore(res);
     if (isVercelBot(req)) return res.sendFile(path.join(__dirname, 'white.html'));
     if (!supabase) return res.sendFile(LANDING_PATH);
 
