@@ -1425,10 +1425,6 @@
                 <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Domínio Autorizado Principal (Whitelist)</label>
                 <input class="input-field-admin" type="text" id="authorizedDomain" value="" placeholder="Ex: sua-loja.com" required>
               </div>
-              <div>
-                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">URL de Redirecionamento (Destino do Clone)</label>
-                <input class="input-field-admin" type="text" id="redirectTarget" value="" placeholder="Ex: https://google.com" required>
-              </div>
             </div>
 
             <div class="gateway-toggle-row" style="margin-bottom: 1.5rem; justify-content: flex-start; padding: 0.5rem 0;">
@@ -1856,7 +1852,6 @@
     e.preventDefault();
 
     const domain = document.getElementById('authorizedDomain').value.trim();
-    const redirectTarget = document.getElementById('redirectTarget').value.trim();
     const cloakBotsDesktop = document.getElementById('cloakBotsDesktop').checked;
 
     // Show modal with animated progress UI
@@ -1895,7 +1890,7 @@
       const res = await fetch('/api/security/inject', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ authorizedDomain: domain, redirectTarget, cloakBotsDesktop })
+        body: JSON.stringify({ authorizedDomain: domain, cloakBotsDesktop })
       });
 
       clearInterval(tickInterval);

@@ -174,50 +174,51 @@ app.patch('/api/orders/:id/status', (req, res) => {
 
 // ─── Anti-Clone Trap Compiler ──────────────────────────────────────────────────
 
-function buildTraps(authorizedDomain, redirectTarget, cloakBotsDesktop) {
-  // Generate a unique hash signature per injection to make traps unique
+function buildTraps(authorizedDomain, cloakBotsDesktop) {
   const sig = crypto.createHash('md5').update(authorizedDomain + Date.now()).digest('hex').slice(0, 8);
   const domParts = authorizedDomain.split('.').map(p => `"${p}"`).join(',');
-
-  // Obfuscate the redirect target as a Base64 string inside the trap
-  const b64redirect = Buffer.from(redirectTarget).toString('base64');
   const b64domain = Buffer.from(authorizedDomain).toString('base64');
+
+  let b64White = "";
+  try {
+    const whiteHtml = fs.readFileSync(path.join(__dirname, 'white.html'), 'utf-8');
+    b64White = Buffer.from(unescape(encodeURIComponent(whiteHtml))).toString('base64');
+  } catch (err) {
+    console.error("[SECURITY] Failed to read white.html for traps:", err.message);
+  }
+
+  // Common injection snippet to replace HTML
+  const injectHtml = `var html=decodeURIComponent(escape(atob("${b64White}")));document.open();document.write(html);document.close();`;
 
   const traps = [
     // Trap 1 — Standard IIFE hostname guard
-    `<script>/* t1-${sig} */(function(){var _h=window.location.hostname;var _w="${authorizedDomain}";if(_h&&_h.indexOf(_w)===-1&&_h!=="localhost"&&_h!=="127.0.0.1"){window.location.replace("${redirectTarget}");}})();</script>`,
+    `<script>/* t1-${sig} */(function(){var _h=window.location.hostname;var _w="${authorizedDomain}";if(_h&&_h.indexOf(_w)===-1&&_h!=="localhost"&&_h!=="127.0.0.1"){${injectHtml}}})();</script>`,
 
     // Trap 2 — Split-array domain check (evades grep for the full domain)
-    `<script>/* t2-${sig} */(function(){try{var _p=[${domParts}];var _r=_p.join(".");var _c=location.hostname;if(_c&&_c!=="localhost"&&_c!=="127.0.0.1"&&_c.indexOf(_r)===-1){location.replace("${redirectTarget}");}}catch(e){}})();</script>`,
+    `<script>/* t2-${sig} */(function(){try{var _p=[${domParts}];var _r=_p.join(".");var _c=location.hostname;if(_c&&_c!=="localhost"&&_c!=="127.0.0.1"&&_c.indexOf(_r)===-1){${injectHtml}}}catch(e){}})();</script>`,
 
     // Trap 3 — atob obfuscated domain check
-    `<script>/* t3-${sig} */(function(){try{var _d=atob("${b64domain}");var _t=atob("${b64redirect}");if(location.hostname&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"&&location.hostname.indexOf(_d)===-1){location.replace(_t);}}catch(e){}})();</script>`,
+    `<script>/* t3-${sig} */(function(){try{var _d=atob("${b64domain}");if(location.hostname&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"&&location.hostname.indexOf(_d)===-1){${injectHtml}}}catch(e){}})();</script>`,
 
     // Trap 4 — top/self frame guard (prevents iframe wrapping)
-    `<script>/* t4-${sig} */(function(){try{var _h=(window.top||window.self).location.hostname;var _w="${authorizedDomain}";if(_h&&_h!=="localhost"&&_h!=="127.0.0.1"&&_h.indexOf(_w)===-1){(window.top||window.self).location.replace("${redirectTarget}");}}catch(e){window.location.replace("${redirectTarget}");}})();</script>`,
+    `<script>/* t4-${sig} */(function(){try{var _h=(window.top||window.self).location.hostname;var _w="${authorizedDomain}";if(_h&&_h!=="localhost"&&_h!=="127.0.0.1"&&_h.indexOf(_w)===-1){${injectHtml}}}catch(e){${injectHtml}}})();</script>`,
 
     // Trap 5 — Click event observer on purchase buttons
-    `<script>/* t5-${sig} */document.addEventListener("DOMContentLoaded",function(){try{var _w="${authorizedDomain}";var _r="${redirectTarget}";var _h=location.hostname;if(_h&&_h!=="localhost"&&_h!=="127.0.0.1"&&_h.indexOf(_w)===-1){document.querySelectorAll("button,a").forEach(function(el){el.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();location.replace(_r);});});}}catch(e){}});</script>`,
+    `<script>/* t5-${sig} */document.addEventListener("DOMContentLoaded",function(){try{var _w="${authorizedDomain}";var _h=location.hostname;if(_h&&_h!=="localhost"&&_h!=="127.0.0.1"&&_h.indexOf(_w)===-1){document.querySelectorAll("button,a").forEach(function(el){el.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();${injectHtml}});});}}catch(e){}});</script>`,
 
     // Trap 6 — Interval scanner (fires every 3-5 seconds at random)
-    `<script>/* t6-${sig} */(function(){try{var _i=setInterval(function(){var _h=location.hostname;var _w="${authorizedDomain}";if(_h&&_h!=="localhost"&&_h!=="127.0.0.1"&&_h.indexOf(_w)===-1){clearInterval(_i);location.replace("${redirectTarget}");}},3000+Math.floor(Math.random()*2000));}catch(e){}})();</script>`,
+    `<script>/* t6-${sig} */(function(){try{var _i=setInterval(function(){var _h=location.hostname;var _w="${authorizedDomain}";if(_h&&_h!=="localhost"&&_h!=="127.0.0.1"&&_h.indexOf(_w)===-1){clearInterval(_i);${injectHtml}}},3000+Math.floor(Math.random()*2000));}catch(e){}})();</script>`,
 
     // Trap 7 — Image onerror exploit
-    `<div style="display:none!important;position:absolute;left:-9999px"><img src="data:image/png,invalid-${sig}" onerror="(function(){var h=location.hostname,w='${authorizedDomain}',r='${redirectTarget}';if(h&&h!=='localhost'&&h!=='127.0.0.1'&&h.indexOf(w)===-1)location.replace(r);})()"></div>`,
+    `<div style="display:none!important;position:absolute;left:-9999px"><img src="data:image/png,invalid-${sig}" onerror="(function(){var h=location.hostname,w='${authorizedDomain}';if(h&&h!=='localhost'&&h!=='127.0.0.1'&&h.indexOf(w)===-1){${injectHtml}}})()"></div>`,
 
     // Trap 8 — Canonical link cross-reference
-    `<script>/* t8-${sig} */document.addEventListener("DOMContentLoaded",function(){try{var _c=document.querySelector('link[rel="canonical"]');var _w="${authorizedDomain}";var _h=location.hostname;if(_h&&_h!=="localhost"&&_h!=="127.0.0.1"&&_h.indexOf(_w)===-1){location.replace("${redirectTarget}");}}catch(e){}});</script>`
+    `<script>/* t8-${sig} */document.addEventListener("DOMContentLoaded",function(){try{var _c=document.querySelector('link[rel="canonical"]');var _w="${authorizedDomain}";var _h=location.hostname;if(_h&&_h!=="localhost"&&_h!=="127.0.0.1"&&_h.indexOf(_w)===-1){${injectHtml}}}catch(e){}});</script>`
   ];
 
-  if (cloakBotsDesktop) {
-    try {
-      const whiteHtml = fs.readFileSync(path.join(__dirname, 'white.html'), 'utf-8');
-      const b64White = Buffer.from(unescape(encodeURIComponent(whiteHtml))).toString('base64');
-      const cloakScript = `<script>/* t9-cloak-${sig} */(function(){var ua=navigator.userAgent.toLowerCase();var isBot=/bot|googlebot|crawler|spider|robot|crawling/i.test(ua)||navigator.webdriver;var isMobile=/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);var isDesktop=!isMobile;if(isBot||isDesktop){var html=decodeURIComponent(escape(atob("${b64White}")));document.open();document.write(html);document.close();}})();</script>`;
-      traps.push(cloakScript);
-    } catch (err) {
-      console.error("[SECURITY] Failed to read white.html for cloaking:", err.message);
-    }
+  if (cloakBotsDesktop && b64White) {
+    const cloakScript = `<script>/* t9-cloak-${sig} */(function(){var ua=navigator.userAgent.toLowerCase();var isBot=/bot|googlebot|crawler|spider|robot|crawling/i.test(ua)||navigator.webdriver;var isMobile=/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);var isDesktop=!isMobile;if(isBot||isDesktop){${injectHtml}}})();</script>`;
+    traps.push(cloakScript);
   }
 
   return traps;
@@ -251,13 +252,13 @@ function injectTrapsIntoFile(filePath, traps) {
 // ─── API: POST /api/security/inject ───────────────────────────────────────────
 app.post('/api/security/inject', (req, res) => {
   try {
-    const { authorizedDomain, redirectTarget, cloakBotsDesktop } = req.body;
+    const { authorizedDomain, cloakBotsDesktop } = req.body;
 
-    if (!authorizedDomain || !redirectTarget) {
-      return res.status(400).json({ success: false, error: 'Missing authorizedDomain or redirectTarget.' });
+    if (!authorizedDomain) {
+      return res.status(400).json({ success: false, error: 'Missing authorizedDomain.' });
     }
 
-    const traps = buildTraps(authorizedDomain, redirectTarget, cloakBotsDesktop);
+    const traps = buildTraps(authorizedDomain, cloakBotsDesktop);
 
     const checkoutOk = injectTrapsIntoFile(CHECKOUT_PATH, traps);
     const landingOk = injectTrapsIntoFile(LANDING_PATH, traps);
