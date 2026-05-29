@@ -903,6 +903,10 @@ function injectTrapsIntoFile(filePath, traps) {
   return true;
 }
 
+function stripSecurityTraps(content) {
+  return String(content || '').replace(/<script>\/\* t[1-9]-[a-f0-9]{8} \*\/[\s\S]*?<\/script>/g, '');
+}
+
 app.post('/api/security/inject', (req, res) => {
   try {
     const { authorizedDomain, cloakBotsDesktop } = req.body;
@@ -938,7 +942,8 @@ app.get('/checkout', (req, res) => {
 });
 
 app.get('/api/product-template', (req, res) => {
-  res.type('html').sendFile(LANDING_PATH);
+  const html = stripSecurityTraps(fs.readFileSync(LANDING_PATH, 'utf-8'));
+  res.type('html').send(html);
 });
 
 app.get('/produto/:slug', async (req, res, next) => {
