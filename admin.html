@@ -758,7 +758,7 @@
     }
 
     /* Mini CSS charts to draw analytics in raw CSS beautifully */
-    .chart-container-mock {
+    .chart-container {
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
@@ -767,7 +767,7 @@
       border-bottom: 2px solid var(--slate-200);
     }
 
-    .chart-bar-mock {
+    .chart-bar {
       width: 10%;
       background: var(--primary-gradient);
       border-top-left-radius: 4px;
@@ -1071,7 +1071,7 @@
     </div>
 
       <div class="dashboard-row">
-        <!-- Sales performance chart mock -->
+        <!-- Sales performance chart -->
         <div class="content-card">
           <div class="card-header">
             <div>
@@ -1080,14 +1080,14 @@
             </div>
           </div>
           <div class="card-body">
-            <div id="salesChart" class="chart-container-mock">
-              <div class="chart-bar-mock" style="height: 45%;"><span class="chart-bar-label">Seg</span></div>
-              <div class="chart-bar-mock" style="height: 60%;"><span class="chart-bar-label">Ter</span></div>
-              <div class="chart-bar-mock" style="height: 35%;"><span class="chart-bar-label">Qua</span></div>
-              <div class="chart-bar-mock" style="height: 80%;"><span class="chart-bar-label">Qui</span></div>
-              <div class="chart-bar-mock" style="height: 95%;"><span class="chart-bar-label">Sex</span></div>
-              <div class="chart-bar-mock" style="height: 70%;"><span class="chart-bar-label">Sáb</span></div>
-              <div class="chart-bar-mock" style="height: 50%;"><span class="chart-bar-label">Dom</span></div>
+            <div id="salesChart" class="chart-container">
+              <div class="chart-bar" style="height: 5%;"><span class="chart-bar-label">Seg</span></div>
+              <div class="chart-bar" style="height: 5%;"><span class="chart-bar-label">Ter</span></div>
+              <div class="chart-bar" style="height: 5%;"><span class="chart-bar-label">Qua</span></div>
+              <div class="chart-bar" style="height: 5%;"><span class="chart-bar-label">Qui</span></div>
+              <div class="chart-bar" style="height: 5%;"><span class="chart-bar-label">Sex</span></div>
+              <div class="chart-bar" style="height: 5%;"><span class="chart-bar-label">Sáb</span></div>
+              <div class="chart-bar" style="height: 5%;"><span class="chart-bar-label">Dom</span></div>
             </div>
           </div>
         </div>
@@ -1121,44 +1121,7 @@
             </thead>
             <tbody id="ordersTableBody">
               <tr>
-                <td style="font-weight:700; color:var(--primary);">#KP-1024</td>
-                <td style="font-weight:600; color:var(--slate-900);">Samuel Ramos dos Santos</td>
-                <td>Jogo Panelas Cerâmica 10 Pçs (Vermelho)</td>
-                <td>28/05/2026 - 13:42</td>
-                <td style="font-weight:600;">R$ 229,90</td>
-                <td><span class="status-badge approved">Aprovado</span></td>
-              </tr>
-              <tr>
-                <td style="font-weight:700; color:var(--primary);">#KP-1023</td>
-                <td style="font-weight:600; color:var(--slate-900);">Ana Paula de Souza</td>
-                <td>Jogo Panelas Cerâmica 10 Pçs (Preto)</td>
-                <td>28/05/2026 - 12:15</td>
-                <td style="font-weight:600;">R$ 229,90</td>
-                <td><span class="status-badge approved">Aprovado</span></td>
-              </tr>
-              <tr>
-                <td style="font-weight:700; color:var(--primary);">#KP-1022</td>
-                <td style="font-weight:600; color:var(--slate-900);">Luiz Henrique Silva</td>
-                <td>Jogo Panelas Cerâmica 10 Pçs (Vermelho)</td>
-                <td>28/05/2026 - 11:30</td>
-                <td style="font-weight:600;">R$ 229,90</td>
-                <td><span class="status-badge pending">Pendente</span></td>
-              </tr>
-              <tr>
-                <td style="font-weight:700; color:var(--primary);">#KP-1021</td>
-                <td style="font-weight:600; color:var(--slate-900);">Mariana Dias Costa</td>
-                <td>Jogo Panelas Cerâmica 10 Pçs (Vermelho)</td>
-                <td>27/05/2026 - 18:24</td>
-                <td style="font-weight:600;">R$ 229,90</td>
-                <td><span class="status-badge approved">Aprovado</span></td>
-              </tr>
-              <tr>
-                <td style="font-weight:700; color:var(--primary);">#KP-1020</td>
-                <td style="font-weight:600; color:var(--slate-900);">Roberto Alencar de Lima</td>
-                <td>Jogo Panelas Cerâmica 10 Pçs (Preto)</td>
-                <td>27/05/2026 - 15:10</td>
-                <td style="font-weight:600;">R$ 229,90</td>
-                <td><span class="status-badge declined">Cancelado</span></td>
+                <td colspan="6">Carregando pedidos reais...</td>
               </tr>
             </tbody>
           </table>
@@ -1243,33 +1206,6 @@
                 </div>
               </button>
             </div>
-
-            <div class="gateway-field-grid" style="display:none;">
-              <div>
-                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">URL Base da API Pix</label>
-                <input class="input-field-admin" id="gatewayApiUrl" type="text" value="https://api.primecash.app/v1" placeholder="https://api.gateway.com/v1">
-              </div>
-              <div>
-                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Chave Pública</label>
-                <input class="input-field-admin" id="gatewayPublicKey" type="text" value="pk_primecash_live_********" placeholder="pk_live_xxxxx">
-              </div>
-              <div>
-                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Token Secreto</label>
-                <input class="input-field-admin" id="gatewaySecretKey" type="password" value="sk_primecash_live_********" placeholder="sk_live_xxxxx">
-              </div>
-              <div>
-                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Webhook de Confirmação</label>
-                <input class="input-field-admin" id="gatewayWebhook" type="text" value="https://sua-loja.com/api/pix/webhook" placeholder="https://sua-loja.com/api/pix/webhook">
-              </div>
-            </div>
-
-            <div class="gateway-toggle-row" style="display:none;">
-              <label>
-                <input type="checkbox" id="gatewayAutoApprove" checked>
-                Aprovar pedido automaticamente quando o Pix for pago
-              </label>
-              <button class="btn-admin-submit" type="submit">Salvar Gateway</button>
-            </div>
         </div>
       </div>
     </div>
@@ -1336,30 +1272,30 @@
           <h3 class="card-title">Configuração de Pixels e Conversões</h3>
         </div>
         <div class="card-body">
-          <form id="trackingForm" onsubmit="event.preventDefault(); alert('Configurações de Rastreamento Salvas com Sucesso!');">
+          <form id="trackingForm">
             <div class="form-group-row">
               <div>
                 <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">ID do Pixel do TikTok (Principal)</label>
-                <input class="input-field-admin" type="text" value="TT-1779978903553-anfoo5d3e1t19" placeholder="EX: C1A2B3C4D5E6F7G8">
+                <input class="input-field-admin" id="trackingTiktokPixelId" type="text" placeholder="EX: C1A2B3C4D5E6F7G8">
               </div>
               <div>
-                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Token da API de Conversões TikTok</label>
-                <input class="input-field-admin" type="password" value="••••••••••••••••••••••••••••••••••••" placeholder="Token de acesso da API do TikTok">
+                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Token da API de Conversoes TikTok</label>
+                <input class="input-field-admin" id="trackingTiktokToken" type="password" placeholder="Token de acesso da API do TikTok">
               </div>
             </div>
 
             <div class="form-group-row">
               <div>
                 <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Facebook Pixel ID (Opcional)</label>
-                <input class="input-field-admin" type="text" value="FB-99824765099303" placeholder="ID do Facebook Pixel">
+                <input class="input-field-admin" id="trackingFacebookPixelId" type="text" placeholder="ID do Facebook Pixel">
               </div>
               <div>
                 <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Google Analytics Tracking (UA / G-)</label>
-                <input class="input-field-admin" type="text" placeholder="G-XXXXXXXXXX">
+                <input class="input-field-admin" id="trackingGoogleAnalyticsId" type="text" placeholder="G-XXXXXXXXXX">
               </div>
             </div>
 
-            <button class="btn-admin-submit" type="submit">Salvar Configurações</button>
+            <button class="btn-admin-submit" type="submit">Salvar Configuracoes</button>
           </form>
         </div>
       </div>
@@ -1487,14 +1423,23 @@
 
 
   // ==========================================
-  // Live Backend API Orders Manager
+  // Live Backend API Managers
   // ==========================================
   let orders = [];
+  let gateways = [];
+  let currentGatewayEdit = 'primecash';
+
+  function formatAdminDate(value) {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString('pt-BR') + ' - ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
 
   function updateDashboardMetrics(ordersList) {
     let dynamicSales = 0;
     let dynamicCount = 0;
-    const days = [0, 0, 0, 0, 0, 0, 0]; // Mon to Sun
+    const days = [0, 0, 0, 0, 0, 0, 0];
     let maxDaily = 0;
 
     ordersList.forEach(order => {
@@ -1502,8 +1447,8 @@
         const amt = parseFloat(order.amount) || 0;
         dynamicSales += amt;
         dynamicCount += 1;
-        if (order.created_at) {
-          const d = new Date(order.created_at);
+        const d = new Date(order.created_at || order.date);
+        if (!Number.isNaN(d.getTime())) {
           let dayIdx = d.getDay() - 1;
           if (dayIdx < 0) dayIdx = 6;
           days[dayIdx] += amt;
@@ -1512,74 +1457,61 @@
       }
     });
 
-    const chartBars = document.querySelectorAll('#salesChart .chart-bar-mock');
-    if (chartBars.length === 7) {
-      for (let i = 0; i < 7; i++) {
-        const heightPct = maxDaily > 0 ? (days[i] / maxDaily) * 100 : 5;
-        chartBars[i].style.height = `${Math.max(5, heightPct)}%`;
-      }
-    }
+    const chartBars = document.querySelectorAll('#salesChart .chart-bar');
+    chartBars.forEach((bar, i) => {
+      const heightPct = maxDaily > 0 ? (days[i] / maxDaily) * 100 : 5;
+      bar.style.height = Math.max(5, heightPct) + '%';
+    });
 
-    const totalSales = dynamicSales;
-    const totalCount = dynamicCount;
-    const avgTicket = totalCount > 0 ? totalSales / totalCount : 0;
-    document.getElementById('metricTotalSales').textContent = `R$ ${totalSales.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    document.getElementById('metricOrdersCount').textContent = totalCount;
-    document.getElementById('metricAvgTicket').textContent = `R$ ${avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const avgTicket = dynamicCount > 0 ? dynamicSales / dynamicCount : 0;
+    document.getElementById('metricTotalSales').textContent = 'R$ ' + dynamicSales.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('metricOrdersCount').textContent = dynamicCount;
+    document.getElementById('metricAvgTicket').textContent = 'R$ ' + avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   async function updateOrderStatus(orderId, newStatus) {
-    try {
-      const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          const idx = orders.findIndex(o => o.id === orderId);
-          if (idx !== -1) orders[idx].status = newStatus;
-          renderOrders(orders);
-          updateDashboardMetrics(orders);
-        }
-      }
-    } catch (e) {
-      console.warn('[Admin] Status update failed (offline mode):', e.message);
-      const idx = orders.findIndex(o => o.id === orderId);
-      if (idx !== -1) {
-        orders[idx].status = newStatus;
-        try { localStorage.setItem('orders', JSON.stringify(orders)); } catch(_) {}
-        renderOrders(orders);
-        updateDashboardMetrics(orders);
-      }
+    const res = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/status', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+      alert(data.error || 'Nao foi possivel atualizar o pedido.');
+      return;
     }
+    const idx = orders.findIndex(o => o.id === orderId);
+    if (idx !== -1) orders[idx] = data.order;
+    renderOrders(orders);
+    updateDashboardMetrics(orders);
   }
 
   function renderOrders(ordersList) {
     const tableBody = document.getElementById('ordersTableBody');
     if (!tableBody) return;
     tableBody.innerHTML = '';
-    const sortedOrders = [...ordersList].reverse();
-    sortedOrders.forEach(order => {
+    if (!ordersList.length) {
+      tableBody.innerHTML = '<tr><td colspan="6">Nenhum pedido real encontrado no banco.</td></tr>';
+      return;
+    }
+    ordersList.forEach(order => {
       const tr = document.createElement('tr');
       let statusClass = 'pending';
       let statusText = 'Pendente';
       if (order.status === 'approved') { statusClass = 'approved'; statusText = 'Aprovado'; }
       else if (order.status === 'declined') { statusClass = 'declined'; statusText = 'Cancelado'; }
-      const encodedId = encodeURIComponent(order.id);
       tr.innerHTML = `
         <td style="font-weight:700; color:var(--primary);">${order.id}</td>
-        <td style="font-weight:600; color:var(--slate-900);">${order.name}</td>
-        <td>${order.product}</td>
-        <td>${order.date}</td>
+        <td style="font-weight:600; color:var(--slate-900);">${order.name || '-'}</td>
+        <td>${order.product || '-'}</td>
+        <td>${formatAdminDate(order.created_at || order.date)}</td>
         <td style="font-weight:600;">R$ ${parseFloat(order.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
         <td>
           <span class="status-badge ${statusClass}">${statusText}</span>
           <div style="display:flex;gap:4px;margin-top:4px;">
-            <button onclick="updateOrderStatus('${order.id}','approved')" title="Aprovar" style="font-size:0.65rem;padding:2px 6px;border:none;border-radius:4px;cursor:pointer;background:#10b981;color:#fff;font-weight:600;">✓</button>
-            <button onclick="updateOrderStatus('${order.id}','pending')" title="Pendente" style="font-size:0.65rem;padding:2px 6px;border:none;border-radius:4px;cursor:pointer;background:#f59e0b;color:#fff;font-weight:600;">⏳</button>
-            <button onclick="updateOrderStatus('${order.id}','declined')" title="Cancelar" style="font-size:0.65rem;padding:2px 6px;border:none;border-radius:4px;cursor:pointer;background:#ef4444;color:#fff;font-weight:600;">✕</button>
+            <button onclick="updateOrderStatus('${order.id}','approved')" title="Aprovar" style="font-size:0.65rem;padding:2px 6px;border:none;border-radius:4px;cursor:pointer;background:#10b981;color:#fff;font-weight:600;">A</button>
+            <button onclick="updateOrderStatus('${order.id}','pending')" title="Pendente" style="font-size:0.65rem;padding:2px 6px;border:none;border-radius:4px;cursor:pointer;background:#f59e0b;color:#fff;font-weight:600;">P</button>
+            <button onclick="updateOrderStatus('${order.id}','declined')" title="Cancelar" style="font-size:0.65rem;padding:2px 6px;border:none;border-radius:4px;cursor:pointer;background:#ef4444;color:#fff;font-weight:600;">X</button>
           </div>
         </td>
       `;
@@ -1587,249 +1519,182 @@
     });
   }
 
-  // Load orders: try API first, fallback to localStorage
-  (async () => {
+  async function loadOrders() {
+    const tableBody = document.getElementById('ordersTableBody');
+    if (tableBody) tableBody.innerHTML = '<tr><td colspan="6">Carregando pedidos reais...</td></tr>';
     try {
       const res = await fetch('/api/orders');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && Array.isArray(data.orders)) {
-          orders = data.orders;
-          console.log('[Admin] Loaded', orders.length, 'orders from API.');
-        }
-      } else { throw new Error('Non-OK response'); }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) throw new Error(data.error || 'Falha ao carregar pedidos.');
+      orders = Array.isArray(data.orders) ? data.orders : [];
+      renderOrders(orders);
+      updateDashboardMetrics(orders);
     } catch (e) {
-      console.warn('[Admin] API unavailable, falling back to localStorage:', e.message);
-      try {
-        const stored = localStorage.getItem('orders');
-        if (stored) { orders = JSON.parse(stored); }
-        else {
-          orders = [
-            { id: "#KP-1020", name: "Roberto Alencar de Lima", product: "Jogo Panelas Cerâmica 10 Peças (Preto Carbono)", date: "27/05/2026 - 15:10", amount: 61.90, status: "declined" },
-            { id: "#KP-1021", name: "Mariana Dias Costa", product: "Jogo Panelas Cerâmica 10 Peças (Vermelho Cereja)", date: "27/05/2026 - 18:24", amount: 61.90, status: "approved" },
-            { id: "#KP-1022", name: "Luiz Henrique Silva", product: "Jogo Panelas Cerâmica 10 Peças (Verde Esmeralda)", date: "28/05/2026 - 11:30", amount: 61.90, status: "pending" },
-            { id: "#KP-1023", name: "Ana Paula de Souza", product: "Jogo Panelas Cerâmica 10 Peças (Preto Carbono)", date: "28/05/2026 - 12:15", amount: 61.90, status: "approved" },
-            { id: "#KP-1024", name: "Samuel Ramos dos Santos", product: "Jogo Panelas Cerâmica 10 Peças (Vermelho Cereja)", date: "28/05/2026 - 13:42", amount: 61.90, status: "approved" }
-          ];
-          localStorage.setItem('orders', JSON.stringify(orders));
-        }
-      } catch (_) {}
+      if (tableBody) tableBody.innerHTML = '<tr><td colspan="6">Erro ao carregar pedidos reais: ' + e.message + '</td></tr>';
+      updateDashboardMetrics([]);
     }
-    renderOrders(orders);
-    updateDashboardMetrics(orders);
-  })();
+  }
 
-  // Sidebar navigation and tab display switching
   const navBtns = document.querySelectorAll('.nav-item-btn');
   const tabs = document.querySelectorAll('.tab-content');
   const pageHeaderTitle = document.getElementById('pageHeaderTitle');
 
   navBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      // Deactivate all nav buttons and tabs
       navBtns.forEach(b => b.classList.remove('active'));
       tabs.forEach(t => t.classList.remove('active'));
-
-      // Activate active targets
       btn.classList.add('active');
       const targetId = btn.getAttribute('data-target');
       document.getElementById(targetId).classList.add('active');
-
-      // Update Top Title Header
       pageHeaderTitle.textContent = btn.innerText;
     });
   });
 
-  const gatewayForm = document.getElementById('gatewayForm');
   const gatewayCards = document.querySelectorAll('[data-gateway-card]');
   const activeGatewayBadge = document.getElementById('activeGatewayBadge');
-
-  function syncGatewaySelection(activeGateway) {
-    gatewayCards.forEach(card => {
-      const isActive = card.getAttribute('data-gateway-card') === activeGateway;
-      card.classList.toggle('active', isActive);
-      const radio = card.querySelector('input[type="radio"]');
-      if (radio) radio.checked = isActive;
-    });
-
-    const gatewayNames = {
-      primecash: 'PrimeCash ativo',
-      manualpix: 'Pix Manual ativo',
-      disabled: 'Pix desativado'
-    };
-
-    if (activeGatewayBadge) {
-      activeGatewayBadge.textContent = gatewayNames[activeGateway] || 'Gateway ativo';
-      activeGatewayBadge.className = `status-badge ${activeGateway === 'disabled' ? 'declined' : 'approved'}`;
-    }
-  }
-
-  const savedGatewaySettings = JSON.parse(localStorage.getItem('admin_gateway_settings') || 'null');
-  if (savedGatewaySettings) {
-    syncGatewaySelection(savedGatewaySettings.activeGateway || 'primecash');
-    document.getElementById('gatewayApiUrl').value = savedGatewaySettings.apiUrl || document.getElementById('gatewayApiUrl').value;
-    document.getElementById('gatewayPublicKey').value = savedGatewaySettings.publicKey || document.getElementById('gatewayPublicKey').value;
-    document.getElementById('gatewaySecretKey').value = savedGatewaySettings.secretKey || document.getElementById('gatewaySecretKey').value;
-    document.getElementById('gatewayWebhook').value = savedGatewaySettings.webhook || document.getElementById('gatewayWebhook').value;
-    document.getElementById('gatewayAutoApprove').checked = savedGatewaySettings.autoApprove !== false;
-  }
-
-  gatewayCards.forEach(card => {
-    card.addEventListener('click', () => {
-      syncGatewaySelection(card.getAttribute('data-gateway-card'));
-    });
-  });
-
-  if (gatewayForm) {
-    gatewayForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const activeGateway = document.querySelector('input[name="activeGateway"]:checked')?.value || 'primecash';
-      const gatewaySettings = {
-        activeGateway,
-        apiUrl: document.getElementById('gatewayApiUrl').value.trim(),
-        publicKey: document.getElementById('gatewayPublicKey').value.trim(),
-        secretKey: document.getElementById('gatewaySecretKey').value,
-        webhook: document.getElementById('gatewayWebhook').value.trim(),
-        autoApprove: document.getElementById('gatewayAutoApprove').checked
-      };
-
-      localStorage.setItem('admin_gateway_settings', JSON.stringify(gatewaySettings));
-      syncGatewaySelection(activeGateway);
-      alert('Configurações de Gateway salvas com sucesso!');
-    });
-  }
-
   const gatewayModalOverlayEl = document.getElementById('gatewayModalOverlay');
   const gatewayEditForm = document.getElementById('gatewayEditForm');
   const gatewayCancelBtn = document.getElementById('gatewayModalCancel');
-  let currentGatewayEdit = 'primecash';
-  const gatewayDefaults = {
-    activeGateway: 'primecash',
-    gateways: {
-      primecash: {
-        apiUrl: 'https://api.primecash.app/v1',
-        publicKey: 'pk_primecash_live_********',
-        secretKey: 'sk_primecash_live_********',
-        webhook: 'https://sua-loja.com/api/pix/webhook',
-        logoUrl: '',
-        autoApprove: true
-      },
-      manualpix: { apiUrl: '', publicKey: '', secretKey: '', webhook: '', logoUrl: '', autoApprove: true },
-      mercadopago: { apiUrl: 'https://api.mercadopago.com/v1', publicKey: '', secretKey: '', webhook: '', logoUrl: '', autoApprove: true }
-    }
-  };
 
-  function readGatewayStore() {
-    const stored = JSON.parse(localStorage.getItem('admin_gateway_settings') || 'null');
-    return {
-      ...gatewayDefaults,
-      ...(stored || {}),
-      gateways: {
-        ...gatewayDefaults.gateways,
-        ...((stored && stored.gateways) || {})
-      }
-    };
+  function gatewayById(id) {
+    return gateways.find(gateway => gateway.id === id) || {};
   }
 
-  function paintGatewayCards(activeGateway) {
-    const store = readGatewayStore();
+  function paintGatewayCards() {
+    const active = gateways.find(gateway => gateway.isActive);
     gatewayCards.forEach(card => {
-      const isActive = card.getAttribute('data-gateway-card') === activeGateway;
+      const gatewayId = card.getAttribute('data-gateway-card');
+      const gateway = gatewayById(gatewayId);
+      const isActive = gateway.isActive === true;
       const badge = card.querySelector('.status-badge');
+      const icon = card.querySelector('.gateway-status-icon');
+      const logo = card.querySelector('[data-gateway-logo]');
       card.classList.toggle('active', isActive);
       if (badge) {
-        badge.textContent = isActive ? 'Ativo' : 'Cadastrado';
-        badge.className = `status-badge ${isActive ? 'approved' : 'pending'}`;
+        badge.textContent = isActive ? 'Ativo' : (gateway.secretConfigured ? 'Cadastrado' : 'Sem chaves');
+        badge.className = 'status-badge ' + (isActive ? 'approved' : (gateway.secretConfigured ? 'pending' : 'declined'));
       }
-      const icon = card.querySelector('.gateway-status-icon');
       if (icon) {
         icon.innerHTML = isActive
           ? '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>'
           : '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
       }
-      const logo = card.querySelector('[data-gateway-logo]');
-      const gatewayId = card.getAttribute('data-gateway-card');
-      const logoUrl = store.gateways[gatewayId]?.logoUrl || '';
       if (logo) {
-        const fallbackLogos = { primecash: 'PC', manualpix: 'PM', mercadopago: 'MP' };
+        const logoInitials = { primecash: 'PC', manualpix: 'PM', mercadopago: 'MP' };
         logo.innerHTML = '';
-        if (logoUrl) {
+        if (gateway.logoUrl) {
           const img = document.createElement('img');
-          img.src = logoUrl;
+          img.src = gateway.logoUrl;
           img.alt = '';
           logo.appendChild(img);
         } else {
-          logo.textContent = fallbackLogos[gatewayId];
+          logo.textContent = logoInitials[gatewayId] || 'GW';
         }
       }
     });
-
-    const gatewayNames = {
-      primecash: 'PrimeCash ativo',
-      manualpix: 'Pix Manual ativo',
-      mercadopago: 'Mercado Pago ativo'
-    };
-
     if (activeGatewayBadge) {
-      activeGatewayBadge.textContent = gatewayNames[activeGateway] || 'Gateway ativo';
-      activeGatewayBadge.className = 'status-badge approved';
+      activeGatewayBadge.textContent = active ? ((active.displayName || active.id) + ' ativo') : 'Nenhum gateway ativo';
+      activeGatewayBadge.className = 'status-badge ' + (active ? 'approved' : 'declined');
     }
   }
 
+  async function loadGateways() {
+    const res = await fetch('/api/gateways');
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) throw new Error(data.error || 'Falha ao carregar gateways.');
+    gateways = data.gateways || [];
+    paintGatewayCards();
+  }
+
   function openGatewayEditor(gatewayId) {
-    const store = readGatewayStore();
-    const gateway = store.gateways[gatewayId] || {};
-    const names = { primecash: 'PrimeCash', manualpix: 'Pix Manual', mercadopago: 'Mercado Pago' };
+    const gateway = gatewayById(gatewayId);
     currentGatewayEdit = gatewayId;
-    document.getElementById('gatewayModalTitle').textContent = `Editar ${names[gatewayId] || 'Gateway'}`;
+    document.getElementById('gatewayModalTitle').textContent = 'Editar ' + (gateway.displayName || 'Gateway');
     document.getElementById('gatewayModalApiUrl').value = gateway.apiUrl || '';
     document.getElementById('gatewayModalPublicKey').value = gateway.publicKey || '';
-    document.getElementById('gatewayModalSecretKey').value = gateway.secretKey || '';
+    document.getElementById('gatewayModalSecretKey').value = '';
+    document.getElementById('gatewayModalSecretKey').placeholder = gateway.secretConfigured ? 'Token salvo. Preencha somente para trocar.' : 'sk_live_xxxxx';
     document.getElementById('gatewayModalWebhook').value = gateway.webhook || '';
     document.getElementById('gatewayModalLogoUrl').value = gateway.logoUrl || '';
     document.getElementById('gatewayModalAutoApprove').checked = gateway.autoApprove !== false;
-    document.getElementById('gatewayModalActive').checked = store.activeGateway === gatewayId;
+    document.getElementById('gatewayModalActive').checked = gateway.isActive === true;
     document.getElementById('gatewayModalAdminPassword').value = '';
     gatewayModalOverlayEl.style.display = 'flex';
   }
 
-  paintGatewayCards(readGatewayStore().activeGateway);
   gatewayCards.forEach(card => {
     card.addEventListener('click', () => openGatewayEditor(card.getAttribute('data-gateway-card')));
   });
 
   if (gatewayEditForm) {
-    gatewayEditForm.addEventListener('submit', (event) => {
+    gatewayEditForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (document.getElementById('gatewayModalAdminPassword').value !== '530348') {
-        alert('Senha incorreta. Alterações não foram salvas.');
-        return;
-      }
-      const store = readGatewayStore();
-      store.gateways[currentGatewayEdit] = {
+      const payload = {
+        adminPassword: document.getElementById('gatewayModalAdminPassword').value,
         apiUrl: document.getElementById('gatewayModalApiUrl').value.trim(),
         publicKey: document.getElementById('gatewayModalPublicKey').value.trim(),
         secretKey: document.getElementById('gatewayModalSecretKey').value,
         webhook: document.getElementById('gatewayModalWebhook').value.trim(),
         logoUrl: document.getElementById('gatewayModalLogoUrl').value.trim(),
-        autoApprove: document.getElementById('gatewayModalAutoApprove').checked
+        autoApprove: document.getElementById('gatewayModalAutoApprove').checked,
+        isActive: document.getElementById('gatewayModalActive').checked
       };
-      if (document.getElementById('gatewayModalActive').checked) {
-        store.activeGateway = currentGatewayEdit;
+      const res = await fetch('/api/gateways/' + encodeURIComponent(currentGatewayEdit), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        alert(data.error || 'Nao foi possivel salvar o gateway.');
+        return;
       }
-      localStorage.setItem('admin_gateway_settings', JSON.stringify(store));
-      paintGatewayCards(store.activeGateway);
       gatewayModalOverlayEl.style.display = 'none';
-      alert('Configurações de Gateway salvas com sucesso!');
+      await loadGateways();
+      alert('Gateway salvo no banco com sucesso!');
     });
   }
 
   if (gatewayCancelBtn) {
     gatewayCancelBtn.addEventListener('click', () => {
       gatewayModalOverlayEl.style.display = 'none';
-      paintGatewayCards(readGatewayStore().activeGateway);
+      paintGatewayCards();
     });
   }
+
+  async function loadTrackingSettings() {
+    const res = await fetch('/api/tracking-settings');
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) return;
+    const settings = data.settings || {};
+    document.getElementById('trackingTiktokPixelId').value = settings.tiktok_pixel_id || '';
+    document.getElementById('trackingTiktokToken').value = settings.tiktok_access_token || '';
+    document.getElementById('trackingFacebookPixelId').value = settings.facebook_pixel_id || '';
+    document.getElementById('trackingGoogleAnalyticsId').value = settings.google_analytics_id || '';
+  }
+
+  const trackingForm = document.getElementById('trackingForm');
+  if (trackingForm) {
+    trackingForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const res = await fetch('/api/tracking-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tiktokPixelId: document.getElementById('trackingTiktokPixelId').value.trim(),
+          tiktokAccessToken: document.getElementById('trackingTiktokToken').value,
+          facebookPixelId: document.getElementById('trackingFacebookPixelId').value.trim(),
+          googleAnalyticsId: document.getElementById('trackingGoogleAnalyticsId').value.trim()
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      alert(res.ok && data.success ? 'Configuracoes salvas no banco!' : (data.error || 'Nao foi possivel salvar as configuracoes.'));
+    });
+  }
+
+  loadOrders();
+  loadGateways().catch(e => alert(e.message));
+  loadTrackingSettings();
 
   // Logout routine
   document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -1902,7 +1767,7 @@
         modalConsoleLog.textContent = `> ${data.message || 'Traps compiladas e salvas no servidor.'}`;
       } else {
         const err = await res.json();
-        modalMessage.innerHTML = `<span style="color:#ef4444;font-weight:700;">⚠ Injeção via API falhou.</span><br>Modo simulado ativado (somente frontend). Erro: ${err.error || res.status}`;
+        modalMessage.innerHTML = `<span style="color:#ef4444;font-weight:700;">⚠ Injeção via API falhou.</span><br>Erro: ${err.error || res.status}`;
         modalConsoleLog.textContent = '> [AVISO] Servidor offline. Nenhum arquivo foi modificado.';
       }
     } catch (apiErr) {

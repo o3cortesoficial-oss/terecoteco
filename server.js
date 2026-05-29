@@ -1,7 +1,6 @@
 /**
- * Kit Panela Shop — Backend Server
- * Node.js/Express API with JSON database, static file serving,
- * and real obfuscated anti-clone security trap injector.
+ * Kit Panela Shop - production backend.
+ * Uses Supabase as the single source of truth for orders, gateways and settings.
  */
 
 const express = require('express');
@@ -10,261 +9,478 @@ const path = require('path');
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 
-// Configured dynamically from environment in production
-const supabaseUrl = process.env.SUPABASE_URL || 'https://wmsndneicukvxsaiypyn.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indtc25kbmVpY3VrdnhzYWl5cHluIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDAwNjQ3NywiZXhwIjoyMDk1NTgyNDc3fQ.uhA--YbrHDBTMTIECacYPxrqnp4NIx-6n8WRZ4KYLZQ';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const adminSavePassword = process.env.ADMIN_SAVE_PASSWORD || '530348';
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const isVercel = process.env.VERCEL === '1';
-const DB_PATH = isVercel ? '/tmp/orders.json' : path.join(__dirname, 'orders.json');
 const CHECKOUT_PATH = path.join(__dirname, 'checkout.html');
 const LANDING_PATH = path.join(__dirname, 'Kit Panela.html');
 
-// ─── Middleware ────────────────────────────────────────────────────────────────
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(express.static(__dirname));
 
-// ─── API: GET /api/orders ──────────────────────────────────────────────────────
+function requireDatabase(res) {
+  if (supabase) return true;
+  res.status(500).json({
+    success: false,
+    error: 'Supabase nao configurado. Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.'
+  });
+  return false;
+}
+
+function formatCurrencyAmount(amount) {
+  return Number(amount || 0).toFixed(2);
+}
+
+function formatOrder(row) {
+  return {
+    id: row.order_id,
+    name: row.customer_name,
+    product: row.product_name,
+    date: row.created_at || row.date,
+    amount: Number(row.amount || 0),
+    status: row.status || 'pending',
+    created_at: row.created_at || row.date,
+    paymentMethod: row.payment_method || null
+  };
+}
+
+function sanitizeGateway(row) {
+  return {
+    id: row.id,
+    displayName: row.display_name,
+    apiUrl: row.api_url || '',
+    publicKey: row.public_key || '',
+    webhook: row.webhook_url || '',
+    logoUrl: row.logo_url || '',
+    autoApprove: row.auto_approve !== false,
+    isActive: row.is_active === true,
+    secretConfigured: Boolean(row.secret_key),
+    updatedAt: row.updated_at
+  };
+}
+
+function pickFirst(obj, keys) {
+  for (const key of keys) {
+    const value = key.split('.').reduce((acc, part) => acc && acc[part], obj);
+    if (value) return value;
+  }
+  return '';
+}
+
+async function nextOrderId() {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('order_id')
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) throw error;
+
+  let nextNum = 1025;
+  if (data && data.length > 0) {
+    const match = String(data[0].order_id || '').match(/\d+/);
+    if (match) nextNum = Number.parseInt(match[0], 10) + 1;
+  }
+  return `#KP-${nextNum}`;
+}
+
+async function createOrder({ name, product, amount, status = 'pending', details = {}, payment = {} }) {
+  const nowIso = new Date().toISOString();
+  const orderId = await nextOrderId();
+  const row = {
+    order_id: orderId,
+    customer_name: name,
+    product_name: product,
+    date: nowIso,
+    amount: formatCurrencyAmount(amount),
+    status,
+    customer_email: details.email || null,
+    customer_phone: details.phone || null,
+    customer_cpf: details.cpf || null,
+    customer_address: details.address || null,
+    payment_method: details.paymentMethod || null,
+    payment_id: payment.id || null,
+    pix_payload: payment.qrCode || null,
+    pix_qr_code: payment.qrCodeBase64 || null,
+    created_at: nowIso
+  };
+
+  const { data, error } = await supabase.from('orders').insert([row]).select().single();
+  if (error) throw error;
+  return formatOrder(data);
+}
+
+async function getActiveGateway() {
+  const { data, error } = await supabase
+    .from('payment_gateways')
+    .select('*')
+    .eq('is_active', true)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error('Nenhum gateway Pix ativo foi configurado.');
+  if (!data.secret_key && data.id !== 'manualpix') {
+    throw new Error(`Gateway ${data.display_name || data.id} sem token secreto configurado.`);
+  }
+  return data;
+}
+
+async function createGatewayPixPayment(gateway, payload) {
+  if (gateway.id === 'manualpix') {
+    throw new Error('Pix Manual nao gera cobranca real automaticamente. Ative um gateway com API.');
+  }
+
+  if (gateway.id === 'mercadopago') {
+    const endpoint = gateway.api_url || 'https://api.mercadopago.com/v1/payments';
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${gateway.secret_key}`,
+        'Content-Type': 'application/json',
+        'X-Idempotency-Key': crypto.randomUUID()
+      },
+      body: JSON.stringify({
+        transaction_amount: Number(payload.amount),
+        description: payload.product,
+        payment_method_id: 'pix',
+        payer: {
+          email: payload.details.email,
+          first_name: String(payload.name).split(' ')[0],
+          last_name: String(payload.name).split(' ').slice(1).join(' ') || String(payload.name).split(' ')[0],
+          identification: {
+            type: 'CPF',
+            number: String(payload.details.cpf || '').replace(/\D/g, '')
+          }
+        },
+        notification_url: gateway.webhook_url || undefined,
+        external_reference: payload.orderReference
+      })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || data.error || 'Mercado Pago recusou a criacao do Pix.');
+    const transaction = data.point_of_interaction?.transaction_data || {};
+    if (!transaction.qr_code) throw new Error('Mercado Pago nao retornou codigo Pix.');
+    return {
+      id: String(data.id || ''),
+      qrCode: transaction.qr_code,
+      qrCodeBase64: transaction.qr_code_base64 || '',
+      ticketUrl: transaction.ticket_url || ''
+    };
+  }
+
+  if (!gateway.api_url) {
+    throw new Error(`Gateway ${gateway.display_name || gateway.id} sem URL de API.`);
+  }
+
+  const response = await fetch(gateway.api_url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${gateway.secret_key}`,
+      'Content-Type': 'application/json',
+      ...(gateway.public_key ? { 'X-Public-Key': gateway.public_key } : {})
+    },
+    body: JSON.stringify({
+      amount: Number(payload.amount),
+      description: payload.product,
+      externalReference: payload.orderReference,
+      customer: {
+        name: payload.name,
+        email: payload.details.email,
+        phone: payload.details.phone,
+        cpf: payload.details.cpf,
+        address: payload.details.address
+      },
+      webhookUrl: gateway.webhook_url || undefined
+    })
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || data.error || `Gateway ${gateway.display_name || gateway.id} recusou a criacao do Pix.`);
+  }
+
+  const qrCode = pickFirst(data, [
+    'qrCode',
+    'qr_code',
+    'pix.qrCode',
+    'pix.qr_code',
+    'pix.copyPaste',
+    'pix.copiaECola',
+    'pixCopiaECola',
+    'copia_cola',
+    'brcode',
+    'payload'
+  ]);
+  const qrCodeBase64 = pickFirst(data, [
+    'qrCodeBase64',
+    'qr_code_base64',
+    'pix.qrCodeBase64',
+    'pix.qr_code_base64',
+    'image_base64'
+  ]);
+
+  if (!qrCode) throw new Error(`Gateway ${gateway.display_name || gateway.id} nao retornou codigo Pix.`);
+  return {
+    id: String(data.id || data.paymentId || data.transactionId || ''),
+    qrCode,
+    qrCodeBase64,
+    ticketUrl: data.ticketUrl || data.ticket_url || ''
+  };
+}
+
 app.get('/api/orders', async (req, res) => {
   try {
-    const { data: orders, error } = await supabase
+    if (!requireDatabase(res)) return;
+    const { data, error } = await supabase
       .from('orders')
       .select('*')
-      .order('date', { ascending: false });
-
+      .order('created_at', { ascending: false });
     if (error) throw error;
-
-    // Map DB fields to what frontend expects
-    const mappedOrders = orders.map(o => ({
-      id: o.order_id,
-      name: o.customer_name,
-      product: o.product_name,
-      date: o.date,
-      amount: parseFloat(o.amount),
-      status: o.status
-    }));
-
-    res.json({ success: true, orders: mappedOrders });
+    res.json({ success: true, orders: data.map(formatOrder) });
   } catch (e) {
     console.error('[DB] Error fetching orders:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
 
-// ─── API: POST /api/orders ─────────────────────────────────────────────────────
 app.post('/api/orders', async (req, res) => {
   try {
-    const { name, product, amount, status } = req.body;
-
+    if (!requireDatabase(res)) return;
+    const { name, product, amount, status, details } = req.body;
     if (!name || !product || amount === undefined) {
       return res.status(400).json({ success: false, error: 'Missing required fields: name, product, amount.' });
     }
-
-    // Generate ID logic (fetch last order)
-    const { data: lastOrderData } = await supabase
-      .from('orders')
-      .select('order_id')
-      .order('id', { ascending: false })
-      .limit(1);
-    
-    let nextNum = 1025;
-    if (lastOrderData && lastOrderData.length > 0) {
-      const match = lastOrderData[0].order_id.match(/\d+/);
-      if (match) nextNum = parseInt(match[0]) + 1;
-    }
-    const orderId = `#KP-${nextNum}`;
-
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('pt-BR') + ' - ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-    const newOrder = {
-      order_id: orderId,
-      customer_name: name,
-      product_name: product,
-      date: dateStr,
-      amount: amount.toString(),
-      status: status || 'pending'
-    };
-
-    const { error } = await supabase.from('orders').insert([newOrder]);
-    if (error) throw error;
-
-    console.log(`[ORDER] New order created: ${orderId} — ${name} — R$ ${amount}`);
-    
-    // Send back frontend format
-    res.json({ 
-      success: true, 
-      order: {
-        id: orderId,
-        name: name,
-        product: product,
-        date: dateStr,
-        amount: parseFloat(amount),
-        status: status || 'pending'
-      }
-    });
-
+    const order = await createOrder({ name, product, amount, status: status || 'pending', details: details || {} });
+    res.json({ success: true, order });
   } catch (e) {
     console.error('[ORDER] Error creating order:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
 
-// ─── API: PATCH /api/orders/:id/status ────────────────────────────────────────
 app.patch('/api/orders/:id/status', async (req, res) => {
   try {
+    if (!requireDatabase(res)) return;
     const { id } = req.params;
     const { status } = req.body;
-
     const validStatuses = ['approved', 'pending', 'declined'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, error: 'Invalid status. Use: approved, pending, or declined.' });
     }
 
-    const orderId = decodeURIComponent(id);
     const { data, error } = await supabase
       .from('orders')
-      .update({ status: status })
-      .eq('order_id', orderId)
+      .update({ status })
+      .eq('order_id', decodeURIComponent(id))
       .select();
-
     if (error) throw error;
     if (!data || data.length === 0) {
       return res.status(404).json({ success: false, error: 'Order not found.' });
     }
-
-    console.log(`[ORDER] Status updated: ${id} → ${status}`);
-    
-    res.json({ 
-      success: true, 
-      order: {
-        id: data[0].order_id,
-        name: data[0].customer_name,
-        product: data[0].product_name,
-        date: data[0].date,
-        amount: parseFloat(data[0].amount),
-        status: data[0].status
-      }
-    });
-
+    res.json({ success: true, order: formatOrder(data[0]) });
   } catch (e) {
     console.error('[ORDER] Error updating status:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
 
-// ─── Anti-Clone Trap Compiler ──────────────────────────────────────────────────
+app.post('/api/checkout/pix', async (req, res) => {
+  try {
+    if (!requireDatabase(res)) return;
+    const { name, product, amount, details = {} } = req.body;
+    if (!name || !product || amount === undefined) {
+      return res.status(400).json({ success: false, error: 'Missing required checkout fields.' });
+    }
+
+    const gateway = await getActiveGateway();
+    const payment = await createGatewayPixPayment(gateway, {
+      name,
+      product,
+      amount,
+      details,
+      orderReference: `KP-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`
+    });
+    const order = await createOrder({
+      name,
+      product,
+      amount,
+      status: 'pending',
+      details: { ...details, paymentMethod: 'PIX' },
+      payment
+    });
+
+    res.json({
+      success: true,
+      order,
+      payment: {
+        id: payment.id,
+        gateway: sanitizeGateway(gateway),
+        qrCode: payment.qrCode,
+        qrCodeBase64: payment.qrCodeBase64,
+        ticketUrl: payment.ticketUrl
+      }
+    });
+  } catch (e) {
+    console.error('[PIX] Error creating payment:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/gateways', async (req, res) => {
+  try {
+    if (!requireDatabase(res)) return;
+    const { data, error } = await supabase
+      .from('payment_gateways')
+      .select('*')
+      .order('display_name', { ascending: true });
+    if (error) throw error;
+    res.json({ success: true, gateways: data.map(sanitizeGateway) });
+  } catch (e) {
+    console.error('[GATEWAY] Error fetching gateways:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.put('/api/gateways/:id', async (req, res) => {
+  try {
+    if (!requireDatabase(res)) return;
+    const { id } = req.params;
+    const { adminPassword, apiUrl, publicKey, secretKey, webhook, logoUrl, autoApprove, isActive } = req.body;
+    if (adminPassword !== adminSavePassword) {
+      return res.status(403).json({ success: false, error: 'Senha incorreta.' });
+    }
+
+    const update = {
+      api_url: apiUrl || '',
+      public_key: publicKey || '',
+      webhook_url: webhook || '',
+      logo_url: logoUrl || '',
+      auto_approve: autoApprove !== false,
+      updated_at: new Date().toISOString()
+    };
+    if (secretKey) update.secret_key = secretKey;
+
+    if (isActive) {
+      const { error: resetError } = await supabase
+        .from('payment_gateways')
+        .update({ is_active: false })
+        .neq('id', id);
+      if (resetError) throw resetError;
+      update.is_active = true;
+    }
+
+    const { data, error } = await supabase
+      .from('payment_gateways')
+      .update(update)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ success: true, gateway: sanitizeGateway(data) });
+  } catch (e) {
+    console.error('[GATEWAY] Error saving gateway:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/tracking-settings', async (req, res) => {
+  try {
+    if (!requireDatabase(res)) return;
+    const { data, error } = await supabase
+      .from('tracking_settings')
+      .select('*')
+      .eq('id', 'default')
+      .maybeSingle();
+    if (error) throw error;
+    res.json({ success: true, settings: data || {} });
+  } catch (e) {
+    console.error('[TRACKING] Error fetching settings:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.put('/api/tracking-settings', async (req, res) => {
+  try {
+    if (!requireDatabase(res)) return;
+    const { tiktokPixelId, tiktokAccessToken, facebookPixelId, googleAnalyticsId } = req.body;
+    const { data, error } = await supabase
+      .from('tracking_settings')
+      .upsert({
+        id: 'default',
+        tiktok_pixel_id: tiktokPixelId || '',
+        tiktok_access_token: tiktokAccessToken || '',
+        facebook_pixel_id: facebookPixelId || '',
+        google_analytics_id: googleAnalyticsId || '',
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ success: true, settings: data });
+  } catch (e) {
+    console.error('[TRACKING] Error saving settings:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
 
 function buildTraps(authorizedDomain, cloakBotsDesktop) {
   const sig = crypto.createHash('md5').update(authorizedDomain + Date.now()).digest('hex').slice(0, 8);
-  const domParts = authorizedDomain.split('.').map(p => `"${p}"`).join(',');
   const b64domain = Buffer.from(authorizedDomain).toString('base64');
-
-  let b64White = "";
+  let b64White = '';
   try {
-    const whiteHtml = fs.readFileSync(path.join(__dirname, 'white.html'), 'utf-8');
-    b64White = Buffer.from(whiteHtml, 'utf-8').toString('base64');
+    b64White = Buffer.from(fs.readFileSync(path.join(__dirname, 'white.html'), 'utf-8'), 'utf-8').toString('base64');
   } catch (err) {
-    console.error("[SECURITY] Failed to read white.html for traps:", err.message);
+    console.error('[SECURITY] Failed to read white.html:', err.message);
   }
 
-  // Common injection snippet to replace HTML without mixing and preserving accents
   const injectHtml = `document.write("<plaintext style='display:none'>");setTimeout(function(){var html=decodeURIComponent(escape(atob("${b64White}")));document.open();document.write(html);document.close();},10);`;
-
   const traps = [
-    // Trap 1 — Standard IIFE hostname guard
-    `<script>/* t1-${sig} */(function(){var _h=window.location.hostname;var _w="${authorizedDomain}";if(_h&&_h.indexOf(_w)===-1&&_h!=="localhost"&&_h!=="127.0.0.1"){${injectHtml}}})();</script>`,
-
-    // Trap 2 — Split-array domain check (evades grep for the full domain)
-    `<script>/* t2-${sig} */(function(){try{var _p=[${domParts}];var _r=_p.join(".");var _c=location.hostname;if(_c&&_c!=="localhost"&&_c!=="127.0.0.1"&&_c.indexOf(_r)===-1){${injectHtml}}}catch(e){}})();</script>`,
-
-    // Trap 3 — atob obfuscated domain check
-    `<script>/* t3-${sig} */(function(){try{var _d=atob("${b64domain}");if(location.hostname&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"&&location.hostname.indexOf(_d)===-1){${injectHtml}}}catch(e){}})();</script>`,
-
-    // Trap 4 — top/self frame guard (prevents iframe wrapping)
-    `<script>/* t4-${sig} */(function(){try{var _h=(window.top||window.self).location.hostname;var _w="${authorizedDomain}";if(_h&&_h!=="localhost"&&_h!=="127.0.0.1"&&_h.indexOf(_w)===-1){${injectHtml}}}catch(e){${injectHtml}}})();</script>`,
-
-    // Trap 5 — Click event observer on purchase buttons
-    `<script>/* t5-${sig} */document.addEventListener("DOMContentLoaded",function(){try{var _w="${authorizedDomain}";var _h=location.hostname;if(_h&&_h!=="localhost"&&_h!=="127.0.0.1"&&_h.indexOf(_w)===-1){document.querySelectorAll("button,a").forEach(function(el){el.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();${injectHtml}});});}}catch(e){}});</script>`,
-
-    // Trap 6 — Interval scanner (fires every 3-5 seconds at random)
-    `<script>/* t6-${sig} */(function(){try{var _i=setInterval(function(){var _h=location.hostname;var _w="${authorizedDomain}";if(_h&&_h!=="localhost"&&_h!=="127.0.0.1"&&_h.indexOf(_w)===-1){clearInterval(_i);${injectHtml}}},3000+Math.floor(Math.random()*2000));}catch(e){}})();</script>`,
-
-    // Trap 7 — Image onerror exploit
-    `<div style="display:none!important;position:absolute;left:-9999px"><img src="data:image/png,invalid-${sig}" onerror="(function(){var h=location.hostname,w='${authorizedDomain}';if(h&&h!=='localhost'&&h!=='127.0.0.1'&&h.indexOf(w)===-1){${injectHtml}}})()"></div>`,
-
-    // Trap 8 — Canonical link cross-reference
-    `<script>/* t8-${sig} */document.addEventListener("DOMContentLoaded",function(){try{var _c=document.querySelector('link[rel="canonical"]');var _w="${authorizedDomain}";var _h=location.hostname;if(_h&&_h!=="localhost"&&_h!=="127.0.0.1"&&_h.indexOf(_w)===-1){${injectHtml}}}catch(e){}});</script>`
+    `<script>/* t1-${sig} */(function(){var d=atob("${b64domain}"),h=location.hostname;if(h&&h!=="localhost"&&h!=="127.0.0.1"&&h.indexOf(d)===-1){${injectHtml}}})();</script>`,
+    `<script>/* t2-${sig} */document.addEventListener("click",function(e){var d=atob("${b64domain}"),h=location.hostname;if(h&&h!=="localhost"&&h!=="127.0.0.1"&&h.indexOf(d)===-1){e.preventDefault();e.stopPropagation();${injectHtml}}},true);</script>`,
+    `<script>/* t3-${sig} */setInterval(function(){var d=atob("${b64domain}"),h=location.hostname;if(h&&h!=="localhost"&&h!=="127.0.0.1"&&h.indexOf(d)===-1){${injectHtml}}},4000);</script>`
   ];
 
   if (cloakBotsDesktop && b64White) {
-    const cloakScript = `<script>/* t9-cloak-${sig} */(function(){var ua=navigator.userAgent.toLowerCase();var isBot=/bot|googlebot|crawler|spider|robot|crawling/i.test(ua)||navigator.webdriver;var isMobile=/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);var isDesktop=!isMobile;if(isBot||isDesktop){${injectHtml}}})();</script>`;
-    traps.push(cloakScript);
+    traps.push(`<script>/* t4-${sig} */(function(){var ua=navigator.userAgent.toLowerCase(),bot=/bot|crawler|spider|robot|webdriver/i.test(ua)||navigator.webdriver,m=/android|iphone|ipad|mobile/i.test(ua);if(bot||!m){${injectHtml}}})();</script>`);
   }
-
   return traps;
 }
 
 function injectTrapsIntoFile(filePath, traps) {
   let content = fs.readFileSync(filePath, 'utf-8');
-
-  // Remove previously injected traps (look for our comment signatures)
-  content = content.replace(/<script>\/\* t[1-9](-cloak)?-[a-f0-9]{8} \*\/[\s\S]*?<\/script>/g, '');
-  content = content.replace(/<div style="display:none!important;position:absolute;left:-9999px">[\s\S]*?<\/div>/g, '');
-
-  // Find insertion points — after the opening <body> tag
+  content = content.replace(/<script>\/\* t[1-9]-[a-f0-9]{8} \*\/[\s\S]*?<\/script>/g, '');
   const bodyMatch = content.match(/<body[^>]*>/i);
-  if (!bodyMatch) {
-    console.error(`[SECURITY] Could not find <body> tag in: ${path.basename(filePath)}`);
-    return false;
-  }
-
+  if (!bodyMatch) return false;
   const bodyIndex = content.indexOf(bodyMatch[0]) + bodyMatch[0].length;
-
-  // Interleave traps between div sections. Inject all 8 right after <body>
-  // but also find 3 strategic div positions to spread them.
-  const trapBlock = '\n' + traps.join('\n') + '\n';
-  content = content.slice(0, bodyIndex) + trapBlock + content.slice(bodyIndex);
-
+  content = content.slice(0, bodyIndex) + `\n${traps.join('\n')}\n` + content.slice(bodyIndex);
   fs.writeFileSync(filePath, content, 'utf-8');
   return true;
 }
 
-// ─── API: POST /api/security/inject ───────────────────────────────────────────
 app.post('/api/security/inject', (req, res) => {
   try {
     const { authorizedDomain, cloakBotsDesktop } = req.body;
-
     if (!authorizedDomain) {
       return res.status(400).json({ success: false, error: 'Missing authorizedDomain.' });
     }
-
     const traps = buildTraps(authorizedDomain, cloakBotsDesktop);
-
     const checkoutOk = injectTrapsIntoFile(CHECKOUT_PATH, traps);
     const landingOk = injectTrapsIntoFile(LANDING_PATH, traps);
-
-    if (checkoutOk && landingOk) {
-      console.log(`[SECURITY] Traps injected successfully for domain: ${authorizedDomain} (Cloaking: ${cloakBotsDesktop})`);
-      res.json({
-        success: true,
-        message: `Armadilhas injetadas com sucesso para o domínio: ${authorizedDomain}`,
-        filesUpdated: ['checkout.html', 'Kit Panela.html'],
-        trapCount: traps.length
-      });
-    } else {
-      res.status(500).json({ success: false, error: 'Falha ao injetar em um ou mais arquivos.' });
+    if (!checkoutOk || !landingOk) {
+      return res.status(500).json({ success: false, error: 'Falha ao injetar em um ou mais arquivos.' });
     }
-
+    res.json({ success: true, filesUpdated: ['checkout.html', 'Kit Panela.html'], trapCount: traps.length });
   } catch (e) {
     console.error('[SECURITY] Injection error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
-
-// ─── SPA Fallbacks ─────────────────────────────────────────────────────────────
 
 function isVercelBot(req) {
   const ua = (req.headers['user-agent'] || '').toLowerCase();
@@ -272,16 +488,12 @@ function isVercelBot(req) {
 }
 
 app.get('/', (req, res) => {
-  if (isVercelBot(req)) {
-    return res.sendFile(path.join(__dirname, 'white.html'));
-  }
+  if (isVercelBot(req)) return res.sendFile(path.join(__dirname, 'white.html'));
   res.sendFile(LANDING_PATH);
 });
 
 app.get('/checkout', (req, res) => {
-  if (isVercelBot(req)) {
-    return res.sendFile(path.join(__dirname, 'white.html'));
-  }
+  if (isVercelBot(req)) return res.sendFile(path.join(__dirname, 'white.html'));
   res.sendFile(CHECKOUT_PATH);
 });
 
@@ -293,19 +505,8 @@ app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-// ─── Boot ──────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  // Ensure DB is initialized on startup
-  loadOrders();
-  console.log(`\n  ╔════════════════════════════════════════╗`);
-  console.log(`  ║   Kit Panela Shop — Server Online       ║`);
-  console.log(`  ║   http://localhost:${PORT}                  ║`);
-  console.log(`  ╚════════════════════════════════════════╝\n`);
-  console.log(`  → Storefront:  http://localhost:${PORT}/`);
-  console.log(`  → Checkout:    http://localhost:${PORT}/checkout.html`);
-  console.log(`  → Admin:       http://localhost:${PORT}/admin.html`);
-  console.log(`  → Login:       http://localhost:${PORT}/login.html`);
-  console.log(`  → Orders API:  http://localhost:${PORT}/api/orders\n`);
+  console.log(`Kit Panela Shop online on http://localhost:${PORT}`);
 });
 
 module.exports = app;

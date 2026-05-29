@@ -2963,8 +2963,6 @@
 
       const null_element = document.getElementById('null_element');
 
-      const null_element = document.getElementById('null_element');
-
       
 
       const interval = setInterval(() => {
@@ -3239,7 +3237,7 @@
 
 
 
-    // Colored base64 images mock representation to match the color chosen!
+    // Colored base64 images used by the product selector.
 
     const kitImages = [
 
@@ -3505,7 +3503,7 @@
 
 
 
-      // Proceed to simulated checkout processing
+      // Proceed to real Pix checkout processing
 
       processingOverlay.style.display = 'flex';
 
@@ -3513,17 +3511,13 @@
 
       const logs = [
 
-        "Iniciando handshake com a rede de adquirentes...",
+        "Validando dados do comprador...",
 
-        "Validando chaves de criptografia SSL...",
+        "Conectando ao gateway Pix ativo...",
 
-        "Verificando cadastro fiscal do comprador (CPF/CNPJ)...",
+        "Criando cobranca Pix real...",
 
-        "Calculando taxas aduaneiras e operacionais...",
-
-        "Processando requisição de pagamento seguro...",
-
-        "Gravando transação criptografada no banco..."
+        "Registrando pedido no banco de dados..."
 
       ];
 
@@ -3553,176 +3547,76 @@
 
 
 
-    // Submit order to backend API with localStorage fallback
+    // Submit order and create a real Pix charge through the configured backend gateway.
     async function finalizeOrderPlacement(fullName, cpf, email, phone, street, number, neighborhood, city, state, cep) {
-
-      // Calculate final total amount paid using the same summary formula.
       const finalAmount = Math.max(10.00, (originalUnitPrice - productDiscountUnitVal - tiktokShopCouponVal) * quantity);
-
       const orderPayload = {
         name: fullName,
-        product: `Jogo Panelas Cerâmica 10 Peças (${selectedColor}) [x${quantity}]`,
+        product: 'Jogo Panelas Ceramica 10 Pecas (' + selectedColor + ') [x' + quantity + ']',
         amount: finalAmount,
-        status: "approved",
         details: {
           cpf: cpf,
           email: email,
           phone: phone,
-          address: `${street}, Nº ${number}, ${neighborhood} - ${city} / ${state} (CEP: ${cep})`,
-          paymentMethod: selectedMethod.toUpperCase()
+          address: street + ', No ' + number + ', ' + neighborhood + ' - ' + city + ' / ' + state + ' (CEP: ' + cep + ')',
+          paymentMethod: 'PIX'
         }
       };
 
-      let orderId = null;
-      let newOrder = null;
-
-      // ── Try backend API first ────────────────────────────────────────────────
+      let data;
       try {
-        const response = await fetch('/api/orders', {
+        const response = await fetch('/api/checkout/pix', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(orderPayload)
         });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.order) {
-            orderId = data.order.id;
-            newOrder = data.order;
-            console.log('[API] Order saved to backend:', orderId);
-          }
+        data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.success || !data.order || !data.payment) {
+          throw new Error(data.error || 'Nao foi possivel gerar a cobranca Pix.');
         }
-      } catch (apiErr) {
-        console.warn('[API] Backend unavailable, falling back to localStorage:', apiErr.message);
+      } catch (err) {
+        processingOverlay.style.display = 'none';
+        alert('Pagamento nao iniciado: ' + err.message);
+        return;
       }
 
-      // ── Fallback: localStorage if API failed ─────────────────────────────────
-      if (!orderId) {
-        let orders = [];
-        try {
-          const stored = localStorage.getItem('orders');
-          if (stored) orders = JSON.parse(stored);
-        } catch (e) { console.error(e); }
-
-        let nextIdNumber = 1025;
-        if (orders.length > 0) {
-          const lastOrder = orders[orders.length - 1];
-          const match = lastOrder.id.match(/\d+/);
-          if (match) nextIdNumber = parseInt(match[0]) + 1;
-        }
-
-        orderId = `#KP-${nextIdNumber}`;
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('pt-BR') + ' - ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-        newOrder = { id: orderId, name: fullName, ...orderPayload, date: dateStr };
-
-        try {
-          orders.push(newOrder);
-          localStorage.setItem('orders', JSON.stringify(orders));
-          console.log('[localStorage] Order saved locally:', orderId);
-        } catch (e) { console.error(e); }
-      }
-
-
-
-      // Display dynamically updated values on the Receipt success screen!
+      const orderId = data.order.id;
+      const payment = data.payment;
 
       document.getElementById('lblReceiptOrderId').textContent = orderId;
-
       document.getElementById('lblReceiptClientName').textContent = fullName;
-
       document.getElementById('lblReceiptCpf').textContent = cpf;
+      document.getElementById('lblReceiptKitColor').textContent = selectedColor + ' (Qtd: ' + quantity + ')';
+      document.getElementById('lblReceiptAddress').textContent = street + ', ' + number + ' - ' + neighborhood + ', ' + city + ' - ' + state;
+      document.getElementById('lblReceiptPaymentMethod').textContent = 'Pix';
 
-      document.getElementById('lblReceiptKitColor').textContent = selectedColor + ` (Qtd: ${quantity})`;
-
-      document.getElementById('lblReceiptAddress').textContent = `${street}, ${number} - ${neighborhood}, ${city} - ${state}`;
-
-      
-
-      let methodLabel = "Pix";
-
-      if (selectedMethod === "card") {
-
-        const cardNum = document.getElementById('txtCardNumber').value;
-
-        const lastDigits = cardNum.replace(/\D/g, "").slice(-4) || "0000";
-
-        methodLabel = `Cartão de Crédito (Final •••• ${lastDigits})`;
-
-      } else if (selectedMethod === "apple") {
-
-        methodLabel = "Apple Pay";
-
-      }
-
-      
-
-      document.getElementById('lblReceiptPaymentMethod').textContent = methodLabel;
-
-      
-
-      const finalTotalStr = `R$ ${finalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
+      const finalTotalStr = 'R$ ' + finalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       document.getElementById('lblReceiptGrandTotal').textContent = finalTotalStr;
 
-
-
-      // Toggle QR panel based on the selected method
-
       const successPixPanel = document.getElementById('successPixPanel');
-
       const successTitle = document.getElementById('lblSuccessTitle');
-
       const successMessage = document.getElementById('lblSuccessMessage');
+      const qrImage = document.getElementById('successPixQrImg');
+      const pixCode = payment.qrCode || '';
 
+      successPixPanel.style.display = 'flex';
+      successTitle.textContent = 'Pedido Reservado!';
+      successMessage.textContent = 'Realize o pagamento do Pix para aprovar o seu pedido e agilizar o envio imediato.';
 
-
-      if (selectedMethod === "pix") {
-
-        successPixPanel.style.display = 'flex';
-
-        successTitle.textContent = "Pedido Reservado!";
-
-        successMessage.textContent = "Realize o pagamento do Pix para aprovar o seu pedido e agilizar o envio imediato.";
-
-        
-
-        // Dynamically update Pix QR Code image API to match the correct dynamic payment amount!
-
-        const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=00020101021226870014br.gov.bcb.pix2565pix.finalizeoficiall.com/pay/${orderId}_${finalAmount.toFixed(2)}`;
-
-        document.getElementById('successPixQrImg').src = qrImgUrl;
-
-        document.getElementById('lblPixCopiaColaCode').textContent = `00020101021226870014br.gov.bcb.pix2565pix.finalizeoficiall.com/pay/${orderId}_${finalAmount.toFixed(2)}`;
-
-        
-
-        // Initialize dynamic 10 min countdown timer for the Pix payment simulator!
-
-        startPixTimer(600); 
-
+      if (payment.qrCodeBase64) {
+        qrImage.style.display = 'block';
+        qrImage.src = payment.qrCodeBase64.startsWith('data:') ? payment.qrCodeBase64 : 'data:image/png;base64,' + payment.qrCodeBase64;
       } else {
-
-        successPixPanel.style.display = 'none';
-
-        successTitle.textContent = "Pagamento Aprovado!";
-
-        successMessage.textContent = "Sua compra foi processada com sucesso! O comprovante de pagamento foi enviado ao seu e-mail.";
-
+        qrImage.removeAttribute('src');
+        qrImage.style.display = 'none';
       }
 
-
-
-      // Hide spinner, show success overlay!
+      document.getElementById('lblPixCopiaColaCode').textContent = pixCode || 'Gateway nao retornou Pix Copia e Cola.';
+      startPixTimer(600);
 
       processingOverlay.style.display = 'none';
-
       successOverlay.style.display = 'block';
-
     }
-
-
 
     // Countdown Timer Helper for Pix QR Code
 

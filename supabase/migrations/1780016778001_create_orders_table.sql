@@ -5,7 +5,7 @@ CREATE TABLE public.orders (
     product_name VARCHAR(255) NOT NULL,
     date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     amount VARCHAR(255) NOT NULL,
-    status VARCHAR(50) DEFAULT 'Aprovado'
+    status VARCHAR(50) DEFAULT 'pending'
 );
 
 -- Row Level Security
