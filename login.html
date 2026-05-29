@@ -392,19 +392,26 @@
 </div>
 
 <script>
-  // Initialize Supabase Client
-  const SUPABASE_URL = 'https://wmsndneicukvxsaiypyn.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indtc25kbmVpY3VrdnhzYWl5cHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDY0NzcsImV4cCI6MjA5NTU4MjQ3N30.5PWUb5GUgcfetn3f0PsO_mIwHU9bSZPAbomp4SGZoNk';
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (window.supabase) {
+    try {
+      const SUPABASE_URL = 'https://wmsndneicukvxsaiypyn.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indtc25kbmVpY3VrdnhzYWl5cHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDY0NzcsImV4cCI6MjA5NTU4MjQ3N30.5PWUb5GUgcfetn3f0PsO_mIwHU9bSZPAbomp4SGZoNk';
+      window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Check if already logged in via Supabase
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session) {
-      window.location.href = 'admin.html';
+      // Check if already logged in via Supabase
+      window.supabaseClient.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          window.location.href = 'admin.html';
+        }
+      }).catch((err) => {
+        console.error('Session check error:', err);
+      });
+    } catch (e) {
+      console.error('Auth init error:', e);
     }
-  }).catch((err) => {
-    console.error('Session check error:', err);
-  });
+  } else {
+    alert("Falha ao carregar os scripts de segurança. Por favor, desative seu AdBlock ou verifique sua conexão.");
+  }
 
   const loginForm = document.getElementById('loginForm');
   const submitBtn = document.getElementById('submitBtn');

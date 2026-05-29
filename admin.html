@@ -1488,25 +1488,38 @@
   // Initialize Supabase Client
   const SUPABASE_URL = 'https://wmsndneicukvxsaiypyn.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indtc25kbmVpY3VrdnhzYWl5cHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDY0NzcsImV4cCI6MjA5NTU4MjQ3N30.5PWUb5GUgcfetn3f0PsO_mIwHU9bSZPAbomp4SGZoNk';
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // Auth Guard Execution: Prevent unauthenticated browsing
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (!session) {
-      window.location.href = 'login.html';
-    } else {
-      // Session exists - hide overlay
-      document.getElementById('authShield').style.display = 'none';
-      
-      // Set custom Username
-      const savedUser = session.user.email;
-      document.getElementById('sidebarUsername').textContent = savedUser;
-      document.getElementById('avatarLetter').textContent = savedUser.charAt(0).toUpperCase();
-    }
-  }).catch((err) => {
-    console.error('Auth error:', err);
+  
+  if (!window.supabase) {
+    alert("Falha ao carregar os scripts de segurança. Por favor, desative seu AdBlock ou verifique sua conexão.");
     window.location.href = 'login.html';
-  });
+  } else {
+    try {
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // Auth Guard Execution: Prevent unauthenticated browsing
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) {
+          window.location.href = 'login.html';
+        } else {
+          // Session exists - hide overlay
+          document.getElementById('authShield').style.display = 'none';
+          
+          // Set custom Username
+          const savedUser = session.user?.email || 'Administrador';
+          document.getElementById('sidebarUsername').textContent = savedUser;
+          document.getElementById('avatarLetter').textContent = savedUser.charAt(0).toUpperCase();
+        }
+      }).catch((err) => {
+        console.error('Auth promise error:', err);
+        window.location.href = 'login.html';
+      });
+    } catch (err) {
+      console.error('Auth init error:', err);
+      window.location.href = 'login.html';
+    }
+  }
+
+
 
   // ==========================================
   // Live Backend API Orders Manager
