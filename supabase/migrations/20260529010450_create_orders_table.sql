@@ -48,10 +48,15 @@ WITH CHECK (true);
 
 INSERT INTO public.payment_gateways (id, display_name, api_url, public_key, secret_key, webhook_url, logo_url, is_active, auto_approve)
 VALUES
-  ('primecash', 'PrimeCash', '', '', '', '', '', true, true),
+  ('primecash', 'PrimeCash', '', '', '', '', '', false, true),
   ('manualpix', 'Pix Manual', '', '', '', '', '', false, true),
-  ('mercadopago', 'Mercado Pago', 'https://api.mercadopago.com/v1/payments', '', '', '', '', false, true)
+  ('mercadopago', 'Mercado Pago', 'https://api.mercadopago.com/v1/payments', '', '', '', '', false, true),
+  ('westpay', 'WestPay', 'https://painel.westpay.com.br/api/v1/transactions', '', '', '', '', true, true)
 ON CONFLICT (id) DO NOTHING;
+
+UPDATE public.payment_gateways
+SET is_active = (id = 'westpay')
+WHERE id IN ('primecash', 'manualpix', 'mercadopago', 'westpay');
 
 CREATE TABLE IF NOT EXISTS public.tracking_settings (
   id TEXT PRIMARY KEY DEFAULT 'default',

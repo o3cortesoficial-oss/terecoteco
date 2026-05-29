@@ -176,6 +176,73 @@ async function createGatewayPixPayment(gateway, payload) {
     };
   }
 
+  if (gateway.id === 'westpay') {
+    const endpoint = gateway.api_url || 'https://painel.westpay.com.br/api/v1/transactions';
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${gateway.secret_key}`,
+        'Content-Type': 'application/json',
+        ...(gateway.public_key ? { 'X-Public-Key': gateway.public_key } : {})
+      },
+      body: JSON.stringify({
+        payment_method: 'pix',
+        paymentMethod: 'pix',
+        method: 'pix',
+        amount: Number(payload.amount),
+        description: payload.product,
+        reference: payload.orderReference,
+        external_reference: payload.orderReference,
+        customer: {
+          name: payload.name,
+          email: payload.details.email,
+          phone: payload.details.phone,
+          document: String(payload.details.cpf || '').replace(/\D/g, ''),
+          cpf: String(payload.details.cpf || '').replace(/\D/g, '')
+        },
+        name: payload.name,
+        email: payload.details.email,
+        phone: payload.details.phone,
+        document: String(payload.details.cpf || '').replace(/\D/g, ''),
+        webhook_url: gateway.webhook_url || undefined,
+        webhookUrl: gateway.webhook_url || undefined
+      })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || data.error || 'WestPay recusou a criacao do Pix.');
+    const transaction = data.transaction || data.data || data.payment || data;
+    const qrCode = pickFirst(transaction, [
+      'qrCode',
+      'qr_code',
+      'pix.qrCode',
+      'pix.qr_code',
+      'pix.copyPaste',
+      'pix.copiaECola',
+      'pixCopiaECola',
+      'copia_cola',
+      'brcode',
+      'payload',
+      'emv'
+    ]);
+    const qrCodeBase64 = pickFirst(transaction, [
+      'qrCodeBase64',
+      'qr_code_base64',
+      'qr_code_image',
+      'pix.qrCodeBase64',
+      'pix.qr_code_base64',
+      'image_base64'
+    ]);
+    if (!qrCode) throw new Error('WestPay nao retornou codigo Pix.');
+    return {
+      id: String(transaction.id || transaction.transaction_id || data.id || ''),
+      qrCode,
+      qrCodeBase64,
+      ticketUrl: transaction.payment_link || transaction.ticket_url || transaction.ticketUrl || ''
+    };
+  }
+
   if (!gateway.api_url) {
     throw new Error(`Gateway ${gateway.display_name || gateway.id} sem URL de API.`);
   }

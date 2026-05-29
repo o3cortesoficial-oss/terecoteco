@@ -1216,6 +1216,27 @@
                   <span class="gateway-edit-hint">Editar chaves</span>
                 </div>
               </button>
+
+              <button class="gateway-card" type="button" data-gateway-card="westpay">
+                <div class="gateway-card-header">
+                  <div class="gateway-identity">
+                    <div class="gateway-logo" data-gateway-logo>WP</div>
+                    <div>
+                    <div class="gateway-name">WestPay</div>
+                    <div class="gateway-meta">API Pix In instalada</div>
+                    </div>
+                  </div>
+                  <span class="gateway-status-icon" aria-label="Inativo">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </span>
+                </div>
+                <div class="gateway-card-footer">
+                  <span class="status-badge pending">Cadastrado</span>
+                  <span class="gateway-edit-hint">Editar chaves</span>
+                </div>
+              </button>
             </div>
         </div>
       </div>
@@ -1630,7 +1651,7 @@
           : '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
       }
       if (logo) {
-        const logoInitials = { primecash: 'PC', manualpix: 'PM', mercadopago: 'MP' };
+        const logoInitials = { primecash: 'PC', manualpix: 'PM', mercadopago: 'MP', westpay: 'WP' };
         logo.innerHTML = '';
         if (gateway.logoUrl) {
           const img = document.createElement('img');
