@@ -2939,6 +2939,19 @@
 
     let selectedMethod = "pix";
 
+    function detectTrafficSource() {
+      const params = new URLSearchParams(window.location.search);
+      const utmSource = params.get('utm_source') || params.get('source');
+      if (utmSource) return utmSource.trim().toLowerCase();
+      const referrer = document.referrer || '';
+      if (!referrer) return 'direto';
+      try {
+        return new URL(referrer).hostname.replace(/^www\./, '').toLowerCase();
+      } catch (_) {
+        return referrer.slice(0, 80).toLowerCase();
+      }
+    }
+
     let quantity = 1;
 
     let isAddressSaved = false;
@@ -3559,6 +3572,7 @@
           email: email,
           phone: phone,
           address: street + ', No ' + number + ', ' + neighborhood + ' - ' + city + ' / ' + state + ' (CEP: ' + cep + ')',
+          trafficSource: detectTrafficSource(),
           paymentMethod: 'PIX'
         }
       };

@@ -3,6 +3,7 @@ ALTER TABLE public.orders
   ADD COLUMN IF NOT EXISTS customer_phone TEXT,
   ADD COLUMN IF NOT EXISTS customer_cpf TEXT,
   ADD COLUMN IF NOT EXISTS customer_address TEXT,
+  ADD COLUMN IF NOT EXISTS traffic_source TEXT,
   ADD COLUMN IF NOT EXISTS payment_method TEXT,
   ADD COLUMN IF NOT EXISTS payment_id TEXT,
   ADD COLUMN IF NOT EXISTS pix_payload TEXT,

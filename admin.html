@@ -1092,6 +1092,17 @@
           </div>
         </div>
 
+        <div class="content-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Origem do Tráfego</h3>
+              <p class="card-subtitle">Fontes registradas nos pedidos reais do checkout</p>
+            </div>
+          </div>
+          <div class="card-body" id="trafficSourceList">
+            <div style="font-size:0.875rem;color:var(--slate-500);">Carregando origens reais...</div>
+          </div>
+        </div>
 
       </div>
     </div>
@@ -1469,6 +1480,43 @@
     document.getElementById('metricAvgTicket').textContent = 'R$ ' + avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
+  function labelTrafficSource(source) {
+    const normalized = String(source || 'direto').toLowerCase();
+    if (normalized.includes('tiktok')) return 'TikTok';
+    if (normalized.includes('instagram')) return 'Instagram';
+    if (normalized.includes('facebook') || normalized === 'fb') return 'Facebook';
+    if (normalized.includes('google')) return 'Google';
+    if (normalized === 'direto' || normalized === 'direct') return 'Direto';
+    return source || 'Direto';
+  }
+
+  function updateTrafficSources(ordersList) {
+    const container = document.getElementById('trafficSourceList');
+    if (!container) return;
+    const totals = {};
+    ordersList.forEach(order => {
+      const label = labelTrafficSource(order.trafficSource);
+      totals[label] = (totals[label] || 0) + 1;
+    });
+    const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    if (!entries.length) {
+      container.innerHTML = '<div style="font-size:0.875rem;color:var(--slate-500);">Nenhuma origem registrada ainda.</div>';
+      return;
+    }
+    const total = entries.reduce((sum, entry) => sum + entry[1], 0);
+    container.innerHTML = entries.map(([label, count]) => {
+      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      return '<div style="margin-bottom:14px;">'
+        + '<div style="display:flex;justify-content:space-between;gap:12px;font-size:0.875rem;font-weight:700;color:var(--slate-700);margin-bottom:6px;">'
+        + '<span>' + label + '</span><span>' + pct + '%</span></div>'
+        + '<div style="height:8px;border-radius:999px;background:var(--slate-100);overflow:hidden;">'
+        + '<div style="height:100%;width:' + pct + '%;border-radius:999px;background:var(--primary-gradient);"></div>'
+        + '</div>'
+        + '<div style="font-size:0.75rem;color:var(--slate-500);margin-top:4px;">' + count + ' pedido(s)</div>'
+        + '</div>';
+    }).join('');
+  }
+
   async function updateOrderStatus(orderId, newStatus) {
     const res = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/status', {
       method: 'PATCH',
@@ -1529,9 +1577,11 @@
       orders = Array.isArray(data.orders) ? data.orders : [];
       renderOrders(orders);
       updateDashboardMetrics(orders);
+      updateTrafficSources(orders);
     } catch (e) {
       if (tableBody) tableBody.innerHTML = '<tr><td colspan="6">Erro ao carregar pedidos reais: ' + e.message + '</td></tr>';
       updateDashboardMetrics([]);
+      updateTrafficSources([]);
     }
   }
 

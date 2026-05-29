@@ -44,6 +44,7 @@ function formatOrder(row) {
     amount: Number(row.amount || 0),
     status: row.status || 'pending',
     created_at: row.created_at || row.date,
+    trafficSource: row.traffic_source || null,
     paymentMethod: row.payment_method || null
   };
 }
@@ -102,6 +103,7 @@ async function createOrder({ name, product, amount, status = 'pending', details 
     customer_phone: details.phone || null,
     customer_cpf: details.cpf || null,
     customer_address: details.address || null,
+    traffic_source: details.trafficSource || null,
     payment_method: details.paymentMethod || null,
     payment_id: payment.id || null,
     pix_payload: payment.qrCode || null,
