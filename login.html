@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Acesso Restrito - Kit Panela Shop</title>
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍳</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    :root {
+      --primary: #ff3d67;
+      --primary-hover: #e03055;
+      --primary-gradient: linear-gradient(135deg, #ff3d67 0%, #f95e2c 100%);
+      --primary-gradient-hover: linear-gradient(135deg, #e03055 0%, #e04a1b 100%);
+      --bg-dark: #0f1729;
+      --bg-light: #f8fafc;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-700: #334155;
+      --slate-900: #0f1729;
+      --card-shadow: 0 20px 25px -5px rgba(15, 23, 41, 0.05), 0 8px 10px -6px rgba(15, 23, 41, 0.03);
+      --btn-shadow: 0 4px 14px 0 rgba(255, 61, 103, 0.35);
+      --border-radius-lg: 16px;
+      --border-radius-md: 12px;
+      --border-radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-light);
+      color: var(--slate-900);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background blobs to wow the user with premium aesthetic */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, rgba(255, 61, 103, 0.07) 0%, rgba(255, 61, 103, 0) 70%);
+      top: -100px;
+      left: -100px;
+      z-index: -1;
+    }
+
+    body::after {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(249, 94, 44, 0.06) 0%, rgba(249, 94, 44, 0) 70%);
+      bottom: -150px;
+      right: -100px;
+      z-index: -1;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      z-index: 1;
+    }
+
+    /* Logo & Header */
+    .brand-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-container {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 60px;
+      background: var(--primary-gradient);
+      border-radius: var(--border-radius-lg);
+      margin-bottom: 1rem;
+      box-shadow: 0 8px 16px -4px rgba(255, 61, 103, 0.3);
+    }
+
+    .logo-container svg {
+      width: 32px;
+      height: 32px;
+      fill: white;
+    }
+
+    .brand-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      letter-spacing: -0.025em;
+      margin-bottom: 0.25rem;
+    }
+
+    .brand-subtitle {
+      font-size: 0.875rem;
+      color: var(--slate-400);
+      font-weight: 500;
+    }
+
+    /* Login Card */
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--slate-100);
+      border-radius: var(--border-radius-lg);
+      padding: 2.25rem 2rem;
+      box-shadow: var(--card-shadow);
+      width: 100%;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--slate-700);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      background-color: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--border-radius-md);
+      color: var(--slate-900);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      outline: none;
+    }
+
+    .input-field::placeholder {
+      color: var(--slate-400);
+      font-weight: 400;
+    }
+
+    .input-field:focus {
+      background-color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 61, 103, 0.15);
+    }
+
+    /* Password visible toggle button */
+    .toggle-password {
+      position: absolute;
+      right: 0.875rem;
+      background: none;
+      border: none;
+      color: var(--slate-400);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s ease;
+      outline: none;
+    }
+
+    .toggle-password:hover {
+      color: var(--slate-700);
+    }
+
+    .toggle-password svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Login Action Button */
+    .btn-submit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 0.9375rem;
+      margin-top: 1.75rem;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: var(--primary-gradient);
+      border: none;
+      border-radius: var(--border-radius-md);
+      box-shadow: var(--btn-shadow);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px 0 rgba(255, 61, 103, 0.45);
+      background: var(--primary-gradient-hover);
+    }
+
+    .btn-submit:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 8px 0 rgba(255, 61, 103, 0.35);
+    }
+
+    /* Loader */
+    .loader {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #ffffff;
+      animation: spin 0.8s ease-in-out infinite;
+      position: absolute;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .btn-text.loading {
+      visibility: hidden;
+    }
+
+    /* Error Alert styling */
+    .alert-container {
+      display: none;
+      background-color: #ffe6ed;
+      border: 1px solid rgba(255, 61, 103, 0.15);
+      border-radius: var(--border-radius-md);
+      padding: 0.875rem 1rem;
+      margin-bottom: 1.5rem;
+      align-items: flex-start;
+      gap: 0.75rem;
+      animation: shake 0.4s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    .alert-icon {
+      color: var(--primary);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .alert-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .alert-message {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--primary);
+      line-height: 1.4;
+    }
+
+    /* Info Badge credentials */
+    .info-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      padding: 0.625rem 0.875rem;
+      background-color: var(--slate-100);
+      border-radius: var(--border-radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--slate-700);
+    }
+
+    .info-badge svg {
+      width: 14px;
+      height: 14px;
+      color: var(--slate-400);
+    }
+
+    .info-badge span {
+      color: var(--slate-900);
+    }
+
+    /* Footer copy */
+    .footer-copy {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.75rem;
+      color: var(--slate-400);
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Brand Header -->
+  <div class="brand-header">
+    <div class="logo-container">
+      <!-- Premium pan/cookware icon styled using brand elements -->
+      <svg viewBox="0 0 24 24">
+        <path d="M2,19V17H22V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19M4,15H20V9H4V15M12,2A3,3 0 0,1 15,5V7H9V5A3,3 0 0,1 12,2Z" />
+      </svg>
+    </div>
+    <h1 class="brand-title">Kit Panela Admin</h1>
+    <p class="brand-subtitle">Gerenciamento Seguro de Checkout & Vendas</p>
+  </div>
+
+  <!-- Login Form Card -->
+  <div class="card">
+    <!-- Error Notification Box -->
+    <div class="alert-container" id="errorAlert">
+      <div class="alert-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <div class="alert-message" id="errorMessage">Credenciais inválidas. Por favor, tente novamente.</div>
+    </div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label" for="username">Usuário</label>
+        <div class="input-wrapper">
+          <input class="input-field" type="text" id="username" name="username" placeholder="Digite seu usuário..." required autocomplete="username">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Senha</label>
+        <div class="input-wrapper">
+          <input class="input-field" type="password" id="password" name="password" placeholder="Digite sua senha..." required autocomplete="current-password">
+          <button class="toggle-password" type="button" id="togglePasswordBtn" aria-label="Mostrar senha">
+            <!-- Hidden Eye icon (open) -->
+            <svg id="eyeOpenIcon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            <!-- Crossed Eye icon (closed) - Hidden initially -->
+            <svg id="eyeClosedIcon" style="display:none;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-submit" type="submit" id="submitBtn">
+        <span class="btn-text" id="btnText">Acessar Painel</span>
+        <div class="loader" id="btnLoader"></div>
+      </button>
+    </form>
+
+    <!-- Credential helper badge -->
+    <div class="info-badge">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      Acesso demo: <span>admin</span> / <span>admin123</span>
+    </div>
+  </div>
+
+  <div class="footer-copy">
+    &copy; 2026 Kit Panela Shop. Acesso Administrativo Protegido.
+  </div>
+</div>
+
+<script>
+  // Simple check - if already logged in, skip login page
+  if (localStorage.getItem('admin_session') === 'true') {
+    window.location.href = 'admin.html';
+  }
+
+  const loginForm = document.getElementById('loginForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const btnText = document.getElementById('btnText');
+  const btnLoader = document.getElementById('btnLoader');
+  const errorAlert = document.getElementById('errorAlert');
+  const errorMessage = document.getElementById('errorMessage');
+  const passwordInput = document.getElementById('password');
+  const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+  const eyeOpenIcon = document.getElementById('eyeOpenIcon');
+  const eyeClosedIcon = document.getElementById('eyeClosedIcon');
+
+  // Interactive password visibility toggle
+  togglePasswordBtn.addEventListener('click', () => {
+    if (passwordInput.type === 'password') {
+      passwordInput.type = 'text';
+      eyeOpenIcon.style.display = 'none';
+      eyeClosedIcon.style.display = 'block';
+    } else {
+      passwordInput.type = 'password';
+      eyeOpenIcon.style.display = 'block';
+      eyeClosedIcon.style.display = 'none';
+    }
+  });
+
+  // Handle Form Submission
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const username = document.getElementById('username').value.trim();
+    const password = passwordInput.value.trim();
+
+    // Hide previous error state
+    errorAlert.style.display = 'none';
+
+    // Enter loading state
+    submitBtn.disabled = true;
+    btnText.classList.add('loading');
+    btnLoader.style.display = 'block';
+
+    // Mock network request latency for real-world authentication feel
+    setTimeout(() => {
+      if (username === 'admin' && password === 'admin123') {
+        // Store Session Token
+        localStorage.setItem('admin_session', 'true');
+        localStorage.setItem('admin_user', username);
+        
+        // Beautiful redirect transition
+        window.location.href = 'admin.html';
+      } else {
+        // Revert loading state
+        submitBtn.disabled = false;
+        btnText.classList.remove('loading');
+        btnLoader.style.display = 'none';
+
+        // Trigger gorgeous shake animated alert message
+        errorAlert.style.display = 'flex';
+        
+        if (username !== 'admin') {
+          errorMessage.textContent = 'Usuário não cadastrado.';
+        } else {
+          errorMessage.textContent = 'Senha incorreta para o administrador.';
+        }
+      }
+    }, 1200);
+  });
+</script>
+</body>
+</html>

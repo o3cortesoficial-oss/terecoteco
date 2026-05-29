@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Controle - Kit Panela Shop</title>
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍳</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    :root {
+      --primary: #ff3d67;
+      --primary-hover: #e03055;
+      --primary-gradient: linear-gradient(135deg, #ff3d67 0%, #f95e2c 100%);
+      --bg-dark: #0f1729;
+      --bg-light: #f8fafc;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f1729;
+      
+      --card-shadow: 0 10px 15px -3px rgba(15, 23, 41, 0.04), 0 4px 6px -4px rgba(15, 23, 41, 0.02);
+      --btn-shadow: 0 4px 12px 0 rgba(255, 61, 103, 0.2);
+      
+      --border-radius-lg: 16px;
+      --border-radius-md: 12px;
+      --border-radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-light);
+      color: var(--slate-900);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* Auth Shield Overlay */
+    #authShield {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      z-index: 99999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+
+    /* Sidebar Styling */
+    .sidebar {
+      width: 260px;
+      background-color: var(--bg-dark);
+      color: #ffffff;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+      z-index: 10;
+      transition: transform 0.3s ease;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--slate-800);
+      margin-bottom: 1.5rem;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: var(--primary-gradient);
+      border-radius: var(--border-radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: white;
+    }
+
+    .brand-name {
+      font-weight: 800;
+      font-size: 1.125rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-tag {
+      font-size: 0.65rem;
+      background-color: rgba(255, 61, 103, 0.15);
+      color: var(--primary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      margin-left: auto;
+    }
+
+    .nav-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    .nav-item-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+      padding: 0.75rem 1rem;
+      background: none;
+      border: none;
+      color: var(--slate-400);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .nav-item-btn:hover, .nav-item-btn.active {
+      color: #ffffff;
+      background-color: var(--slate-800);
+    }
+
+    .nav-item-btn.active {
+      border-left: 3px solid var(--primary);
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+
+    .nav-item-btn svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--slate-800);
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: var(--slate-700);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #ffffff;
+      font-size: 0.875rem;
+      border: 2px solid var(--primary);
+    }
+
+    .user-details {
+      line-height: 1.2;
+    }
+
+    .username {
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    .role {
+      font-size: 0.75rem;
+      color: var(--slate-400);
+    }
+
+    .btn-logout {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.625rem;
+      background-color: rgba(255, 61, 103, 0.1);
+      border: 1px solid rgba(255, 61, 103, 0.15);
+      border-radius: var(--border-radius-sm);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-logout:hover {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    /* Main Dashboard Layout */
+    .main-content {
+      margin-left: 260px;
+      width: calc(100% - 260px);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Main Header */
+    .top-header {
+      background-color: #ffffff;
+      border-bottom: 1px solid var(--slate-200);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .page-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      letter-spacing: -0.02em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .btn-action-light {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.875rem;
+      background-color: var(--slate-100);
+      color: var(--slate-700);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--border-radius-sm);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action-light:hover {
+      background-color: var(--slate-200);
+      color: var(--slate-900);
+    }
+
+    .btn-action-light svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Inner Workspace Content */
+    .inner-body {
+      padding: 2rem;
+      flex-grow: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Metric Grid Cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .metric-card {
+      background-color: #ffffff;
+      border: 1px solid var(--slate-100);
+      border-radius: var(--border-radius-md);
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .metric-title {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--slate-500);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-icon-wrap {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background-color: var(--slate-100);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--slate-700);
+    }
+
+    .metric-icon-wrap.accent {
+      background-color: rgba(255, 61, 103, 0.1);
+      color: var(--primary);
+    }
+
+    .metric-icon-wrap svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .metric-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      letter-spacing: -0.03em;
+      margin-bottom: 0.25rem;
+    }
+
+    .metric-meta {
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .metric-meta.positive {
+      color: #10b981; /* Emerald-500 */
+    }
+
+    .metric-meta.negative {
+      color: #ef4444; /* Red-500 */
+    }
+
+    .metric-meta.neutral {
+      color: var(--slate-500);
+    }
+
+    /* Layout Columns */
+    .dashboard-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 992px) {
+      .dashboard-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Subsections / Tab contents */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Content Cards */
+    .content-card {
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--border-radius-md);
+      box-shadow: var(--card-shadow);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--slate-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 0.9375rem;
+      font-weight: 750;
+      color: var(--slate-900);
+    }
+
+    .card-subtitle {
+      font-size: 0.8125rem;
+      color: var(--slate-500);
+      font-weight: 500;
+    }
+
+    .card-body {
+      padding: 1.5rem;
+    }
+
+    /* Table Design */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--slate-50);
+      color: var(--slate-700);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.875rem 1.5rem;
+      border-bottom: 1px solid var(--slate-200);
+    }
+
+    td {
+      padding: 1rem 1.5rem;
+      font-size: 0.875rem;
+      color: var(--slate-700);
+      font-weight: 500;
+      border-bottom: 1px solid var(--slate-100);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: var(--slate-50);
+    }
+
+    /* Badges & Statuses */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 12px;
+      line-height: 1.2;
+    }
+
+    .status-badge.approved {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-badge.pending {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-badge.declined {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+
+    /* Form Fields Inside Content Cards */
+    .form-group-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (max-width: 768px) {
+      .form-group-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .input-field-admin {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      background-color: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--border-radius-sm);
+      color: var(--slate-900);
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    .input-field-admin:focus {
+      background-color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 61, 103, 0.1);
+    }
+
+    .btn-admin-submit {
+      padding: 0.75rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: white;
+      background: var(--primary-gradient);
+      border: none;
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      box-shadow: var(--btn-shadow);
+      transition: all 0.2s ease;
+    }
+
+    .btn-admin-submit:hover {
+      box-shadow: 0 4px 14px 0 rgba(255, 61, 103, 0.35);
+      filter: brightness(1.05);
+    }
+
+    .gateway-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 992px) {
+      .gateway-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .gateway-card {
+      border: 1px solid var(--slate-200);
+      border-radius: var(--border-radius-md);
+      padding: 1rem;
+      background-color: var(--slate-50);
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .gateway-card.active {
+      background-color: #ffffff;
+      border-color: rgba(255, 61, 103, 0.45);
+      box-shadow: 0 0 0 3px rgba(255, 61, 103, 0.08);
+    }
+
+    .gateway-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 61, 103, 0.32);
+      box-shadow: var(--card-shadow);
+    }
+
+    .gateway-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .gateway-identity {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .gateway-logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 800;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .gateway-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 6px;
+    }
+
+    .gateway-name {
+      font-size: 0.9375rem;
+      font-weight: 800;
+      color: var(--slate-900);
+    }
+
+    .gateway-meta {
+      margin-top: 0.25rem;
+      color: var(--slate-500);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .gateway-status-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background-color: #fee2e2;
+      color: #dc2626;
+    }
+
+    .gateway-card.active .gateway-status-icon {
+      background-color: #d1fae5;
+      color: #059669;
+    }
+
+    .gateway-status-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .gateway-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .gateway-edit-hint {
+      color: var(--slate-500);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .gateway-field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .gateway-field-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .gateway-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-top: 1rem;
+      margin-top: 0.25rem;
+      border-top: 1px solid var(--slate-200);
+    }
+
+    .gateway-toggle-row label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--slate-700);
+      font-size: 0.8125rem;
+      font-weight: 700;
+    }
+
+    .gateway-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .btn-admin-secondary {
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--slate-700);
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+    }
+
+    /* Anti-Clone Console Styling */
+    .security-console {
+      background-color: var(--bg-dark);
+      color: #a855f7; /* Purple accents */
+      font-family: monospace;
+      padding: 1.25rem;
+      border-radius: var(--border-radius-sm);
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      max-height: 180px;
+      overflow-y: auto;
+      border: 1px solid var(--slate-800);
+      margin-top: 1.25rem;
+    }
+
+    .security-console-line {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .security-console-line.success {
+      color: #10b981;
+    }
+
+    .security-console-line.warning {
+      color: #f59e0b;
+    }
+
+    .security-console-timestamp {
+      color: var(--slate-500);
+      flex-shrink: 0;
+    }
+
+    /* Mini CSS charts to draw analytics in raw CSS beautifully */
+    .chart-container-mock {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      height: 180px;
+      padding-top: 1rem;
+      border-bottom: 2px solid var(--slate-200);
+    }
+
+    .chart-bar-mock {
+      width: 10%;
+      background: var(--primary-gradient);
+      border-top-left-radius: 4px;
+      border-top-right-radius: 4px;
+      position: relative;
+      transition: height 0.5s ease;
+      min-height: 5px;
+    }
+
+    .chart-bar-label {
+      position: absolute;
+      bottom: -1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--slate-500);
+    }
+
+    /* Trap Obfuscation Active Toggle */
+    .trap-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.875rem;
+      background-color: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 20px;
+      color: #047857;
+      font-weight: 700;
+      font-size: 0.8125rem;
+    }
+
+    .trap-status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #10b981;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background-color: rgba(15, 23, 41, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .modal {
+      background: white;
+      border-radius: var(--border-radius-lg);
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+      overflow: hidden;
+      animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes scaleUp {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--slate-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+      font-size: 0.875rem;
+      color: var(--slate-700);
+      line-height: 1.5;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      background-color: var(--slate-50);
+      border-top: 1px solid var(--slate-200);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    .btn-modal-close {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--slate-300);
+      background-color: white;
+      color: var(--slate-700);
+      font-weight: 600;
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      font-size: 0.8125rem;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      background-color: var(--slate-200);
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      display: none;
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      width: 0%;
+      background: var(--primary-gradient);
+      transition: width 0.1s linear;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Authentication Shield Overlay to block unauthorized access -->
+<div id="authShield">Verificando Credenciais...</div>
+
+<!-- Sidebar Navigation -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24">
+        <path d="M2,19V17H22V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19M4,15H20V9H4V15M12,2A3,3 0 0,1 15,5V7H9V5A3,3 0 0,1 12,2Z" />
+      </svg>
+    </div>
+    <span class="brand-name">Panela Admin</span>
+    <span class="brand-tag">v1.2</span>
+  </div>
+
+  <nav>
+    <ul class="nav-menu">
+      <li>
+        <button class="nav-item-btn active" data-target="tab-overview">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
+          </svg>
+          Visão Geral
+        </button>
+      </li>
+      <li>
+        <button class="nav-item-btn" data-target="tab-orders">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+          </svg>
+          Pedidos Recebidos
+        </button>
+      </li>
+      <li>
+        <button class="nav-item-btn" data-target="tab-gateways">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h.01M11 15h2m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+          Gateways
+        </button>
+      </li>
+      <li>
+        <button class="nav-item-btn" data-target="tab-tracking">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+          </svg>
+          Funil & Pixel
+        </button>
+      </li>
+      <li>
+        <button class="nav-item-btn" data-target="tab-security">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          Anti-Clone Traps
+        </button>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="avatar" id="avatarLetter">A</div>
+      <div class="user-details">
+        <div class="username" id="sidebarUsername">Administrador</div>
+        <div class="role">Operador de Vendas</div>
+      </div>
+    </div>
+    <button class="btn-logout" id="logoutBtn">
+      <svg style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+      </svg>
+      Sair do Painel
+    </button>
+  </div>
+</aside>
+
+<!-- Main Dashboard Layout -->
+<main class="main-content">
+  <!-- Top header bar with quick links -->
+  <header class="top-header">
+    <h2 class="page-title" id="pageHeaderTitle">Visão Geral</h2>
+    <div class="header-actions">
+      <a href="http://localhost:8080/Kit%20Panela.html" target="_blank" class="btn-action-light">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+        Visualizar Loja
+      </a>
+    </div>
+  </header>
+
+  <!-- Inner dashboard body page contents -->
+  <div class="inner-body">
+    
+    <!-- ========================================== -->
+    <!-- TAB 1: VISÃO GERAL (OVERVIEW) -->
+    <!-- ========================================== -->
+    <div id="tab-overview" class="tab-content active">
+    <!-- Dynamic Metric Row -->
+    <div class="metrics-grid">
+      <!-- Metric 1 -->
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Faturamento Total</span>
+          <div class="metric-icon-wrap accent">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+        <div class="metric-value" id="metricTotalSales">R$ 48.910,00</div>
+        <div class="metric-meta positive">
+          <svg style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+          +12.4% vs semana passada
+        </div>
+      </div>
+      <!-- Metric 2 -->
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Pedidos Pagos</span>
+          <div class="metric-icon-wrap">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+          </div>
+        </div>
+        <div class="metric-value" id="metricOrdersCount">214</div>
+        <div class="metric-meta positive">
+          <svg style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+          +8.3% conversão média
+        </div>
+      </div>
+      <!-- Metric 3 -->
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Ticket Médio</span>
+          <div class="metric-icon-wrap">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        </div>
+        <div class="metric-value" id="metricAvgTicket">R$ 228,55</div>
+        <div class="metric-meta neutral">
+          Estável no faturamento
+        </div>
+      </div>
+      <!-- Metric 4 -->
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Clonagem Detectada</span>
+          <div class="metric-icon-wrap accent">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.618 5.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+        </div>
+        <div class="metric-value">0</div>
+        <div class="metric-meta positive">
+          Domínio 100% Protegido
+        </div>
+      </div>
+    </div>
+
+      <div class="dashboard-row">
+        <!-- Sales performance chart mock -->
+        <div class="content-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Desempenho de Vendas Semanal</h3>
+              <p class="card-subtitle">Volume diário de pedidos pagos gerados no checkout</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-container-mock">
+              <div class="chart-bar-mock" style="height: 45%;"><span class="chart-bar-label">Seg</span></div>
+              <div class="chart-bar-mock" style="height: 60%;"><span class="chart-bar-label">Ter</span></div>
+              <div class="chart-bar-mock" style="height: 35%;"><span class="chart-bar-label">Qua</span></div>
+              <div class="chart-bar-mock" style="height: 80%;"><span class="chart-bar-label">Qui</span></div>
+              <div class="chart-bar-mock" style="height: 95%;"><span class="chart-bar-label">Sex</span></div>
+              <div class="chart-bar-mock" style="height: 70%;"><span class="chart-bar-label">Sáb</span></div>
+              <div class="chart-bar-mock" style="height: 50%;"><span class="chart-bar-label">Dom</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conversion rates mock card -->
+        <div class="content-card">
+          <div class="card-header">
+            <h3 class="card-title">Origem do Tráfego</h3>
+          </div>
+          <div class="card-body">
+            <!-- Simple clean progress statistics -->
+            <div style="margin-bottom: 1rem;">
+              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; font-weight:600; margin-bottom: 0.25rem;">
+                <span>TikTok Ads</span>
+                <span>72%</span>
+              </div>
+              <div style="height:6px; background-color:var(--slate-200); border-radius:3px; overflow:hidden;">
+                <div style="width:72%; height:100%; background:var(--primary-gradient);"></div>
+              </div>
+            </div>
+            <div style="margin-bottom: 1rem;">
+              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; font-weight:600; margin-bottom: 0.25rem;">
+                <span>Instagram Ads</span>
+                <span>18%</span>
+              </div>
+              <div style="height:6px; background-color:var(--slate-200); border-radius:3px; overflow:hidden;">
+                <div style="width:18%; height:100%; background-color:#ff3870;"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; font-weight:600; margin-bottom: 0.25rem;">
+                <span>Orgânico / Direto</span>
+                <span>10%</span>
+              </div>
+              <div style="height:6px; background-color:var(--slate-200); border-radius:3px; overflow:hidden;">
+                <div style="width:10%; height:100%; background-color:var(--slate-400);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: PEDIDOS RECEBIDOS -->
+    <!-- ========================================== -->
+    <div id="tab-orders" class="tab-content">
+      <div class="content-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Lista Geral de Transações</h3>
+            <p class="card-subtitle">Acompanhe o status dos pagamentos processados no checkout</p>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Pedido</th>
+                <th>Cliente</th>
+                <th>Produto</th>
+                <th>Data</th>
+                <th>Valor</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+              <tr>
+                <td style="font-weight:700; color:var(--primary);">#KP-1024</td>
+                <td style="font-weight:600; color:var(--slate-900);">Samuel Ramos dos Santos</td>
+                <td>Jogo Panelas Cerâmica 10 Pçs (Vermelho)</td>
+                <td>28/05/2026 - 13:42</td>
+                <td style="font-weight:600;">R$ 229,90</td>
+                <td><span class="status-badge approved">Aprovado</span></td>
+              </tr>
+              <tr>
+                <td style="font-weight:700; color:var(--primary);">#KP-1023</td>
+                <td style="font-weight:600; color:var(--slate-900);">Ana Paula de Souza</td>
+                <td>Jogo Panelas Cerâmica 10 Pçs (Preto)</td>
+                <td>28/05/2026 - 12:15</td>
+                <td style="font-weight:600;">R$ 229,90</td>
+                <td><span class="status-badge approved">Aprovado</span></td>
+              </tr>
+              <tr>
+                <td style="font-weight:700; color:var(--primary);">#KP-1022</td>
+                <td style="font-weight:600; color:var(--slate-900);">Luiz Henrique Silva</td>
+                <td>Jogo Panelas Cerâmica 10 Pçs (Vermelho)</td>
+                <td>28/05/2026 - 11:30</td>
+                <td style="font-weight:600;">R$ 229,90</td>
+                <td><span class="status-badge pending">Pendente</span></td>
+              </tr>
+              <tr>
+                <td style="font-weight:700; color:var(--primary);">#KP-1021</td>
+                <td style="font-weight:600; color:var(--slate-900);">Mariana Dias Costa</td>
+                <td>Jogo Panelas Cerâmica 10 Pçs (Vermelho)</td>
+                <td>27/05/2026 - 18:24</td>
+                <td style="font-weight:600;">R$ 229,90</td>
+                <td><span class="status-badge approved">Aprovado</span></td>
+              </tr>
+              <tr>
+                <td style="font-weight:700; color:var(--primary);">#KP-1020</td>
+                <td style="font-weight:600; color:var(--slate-900);">Roberto Alencar de Lima</td>
+                <td>Jogo Panelas Cerâmica 10 Pçs (Preto)</td>
+                <td>27/05/2026 - 15:10</td>
+                <td style="font-weight:600;">R$ 229,90</td>
+                <td><span class="status-badge declined">Cancelado</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: GATEWAYS -->
+    <!-- ========================================== -->
+    <div id="tab-gateways" class="tab-content">
+      <div class="content-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Gateways de Pagamento Pix</h3>
+            <p class="card-subtitle">Controle as APIs Pix instaladas e escolha qual gateway fica ativo no checkout</p>
+          </div>
+          <span class="status-badge approved" id="activeGatewayBadge">PrimeCash ativo</span>
+        </div>
+        <div class="card-body">
+          <div class="gateway-grid" id="gatewayCardsGrid">
+              <button class="gateway-card active" type="button" data-gateway-card="primecash">
+                <div class="gateway-card-header">
+                  <div class="gateway-identity">
+                    <div class="gateway-logo" data-gateway-logo>PC</div>
+                    <div>
+                    <div class="gateway-name">PrimeCash</div>
+                    <div class="gateway-meta">Pix dinâmico instalado</div>
+                    </div>
+                  </div>
+                  <span class="gateway-status-icon" aria-label="Ativo">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </span>
+                </div>
+                <div class="gateway-card-footer">
+                  <span class="status-badge approved">Ativo</span>
+                  <span class="gateway-edit-hint">Editar chaves</span>
+                </div>
+              </button>
+
+              <button class="gateway-card" type="button" data-gateway-card="manualpix">
+                <div class="gateway-card-header">
+                  <div class="gateway-identity">
+                    <div class="gateway-logo" data-gateway-logo>PM</div>
+                    <div>
+                    <div class="gateway-name">Pix Manual</div>
+                    <div class="gateway-meta">Copia e cola configurável</div>
+                    </div>
+                  </div>
+                  <span class="gateway-status-icon" aria-label="Inativo">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </span>
+                </div>
+                <div class="gateway-card-footer">
+                  <span class="status-badge pending">Cadastrado</span>
+                  <span class="gateway-edit-hint">Editar chaves</span>
+                </div>
+              </button>
+
+              <button class="gateway-card" type="button" data-gateway-card="mercadopago">
+                <div class="gateway-card-header">
+                  <div class="gateway-identity">
+                    <div class="gateway-logo" data-gateway-logo>MP</div>
+                    <div>
+                    <div class="gateway-name">Mercado Pago</div>
+                    <div class="gateway-meta">API Pix cadastrada</div>
+                    </div>
+                  </div>
+                  <span class="gateway-status-icon" aria-label="Inativo">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </span>
+                </div>
+                <div class="gateway-card-footer">
+                  <span class="status-badge pending">Cadastrado</span>
+                  <span class="gateway-edit-hint">Editar chaves</span>
+                </div>
+              </button>
+            </div>
+
+            <div class="gateway-field-grid" style="display:none;">
+              <div>
+                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">URL Base da API Pix</label>
+                <input class="input-field-admin" id="gatewayApiUrl" type="text" value="https://api.primecash.app/v1" placeholder="https://api.gateway.com/v1">
+              </div>
+              <div>
+                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Chave Pública</label>
+                <input class="input-field-admin" id="gatewayPublicKey" type="text" value="pk_primecash_live_********" placeholder="pk_live_xxxxx">
+              </div>
+              <div>
+                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Token Secreto</label>
+                <input class="input-field-admin" id="gatewaySecretKey" type="password" value="sk_primecash_live_********" placeholder="sk_live_xxxxx">
+              </div>
+              <div>
+                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Webhook de Confirmação</label>
+                <input class="input-field-admin" id="gatewayWebhook" type="text" value="https://diadasmaestktk.netlify.app/api/pix/webhook" placeholder="https://sua-loja.com/api/pix/webhook">
+              </div>
+            </div>
+
+            <div class="gateway-toggle-row" style="display:none;">
+              <label>
+                <input type="checkbox" id="gatewayAutoApprove" checked>
+                Aprovar pedido automaticamente quando o Pix for pago
+              </label>
+              <button class="btn-admin-submit" type="submit">Salvar Gateway</button>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="gatewayModalOverlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="card-title" id="gatewayModalTitle">Editar Gateway</h3>
+        </div>
+        <form class="modal-body" id="gatewayEditForm">
+          <div class="gateway-field-grid">
+            <div>
+              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Logo do Gateway</label>
+              <input class="input-field-admin" id="gatewayModalLogoUrl" type="text" placeholder="https://site.com/logo.png">
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">URL Base da API Pix</label>
+              <input class="input-field-admin" id="gatewayModalApiUrl" type="text" placeholder="https://api.gateway.com/v1">
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Chave Pública</label>
+              <input class="input-field-admin" id="gatewayModalPublicKey" type="text" placeholder="pk_live_xxxxx">
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Token Secreto</label>
+              <input class="input-field-admin" id="gatewayModalSecretKey" type="password" placeholder="sk_live_xxxxx">
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Webhook de Confirmação</label>
+              <input class="input-field-admin" id="gatewayModalWebhook" type="text" placeholder="https://sua-loja.com/api/pix/webhook">
+            </div>
+          </div>
+
+          <div class="gateway-toggle-row">
+            <label>
+              <input type="checkbox" id="gatewayModalActive">
+              Marcar este gateway como ativo no checkout
+            </label>
+            <label>
+              <input type="checkbox" id="gatewayModalAutoApprove" checked>
+              Aprovar pedido automaticamente quando o Pix for pago
+            </label>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Senha para salvar alterações</label>
+            <input class="input-field-admin" id="gatewayModalAdminPassword" type="password" placeholder="Digite a senha de confirmação" autocomplete="off" required>
+          </div>
+
+          <div class="gateway-modal-actions">
+            <button class="btn-admin-secondary" type="button" id="gatewayModalCancel">Cancelar</button>
+            <button class="btn-admin-submit" type="submit">Salvar Gateway</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: FUNIL & PIXEL -->
+    <!-- ========================================== -->
+    <div id="tab-tracking" class="tab-content">
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">Configuração de Pixels e Conversões</h3>
+        </div>
+        <div class="card-body">
+          <form id="trackingForm" onsubmit="event.preventDefault(); alert('Configurações de Rastreamento Salvas com Sucesso!');">
+            <div class="form-group-row">
+              <div>
+                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">ID do Pixel do TikTok (Principal)</label>
+                <input class="input-field-admin" type="text" value="TT-1779978903553-anfoo5d3e1t19" placeholder="EX: C1A2B3C4D5E6F7G8">
+              </div>
+              <div>
+                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Token da API de Conversões TikTok</label>
+                <input class="input-field-admin" type="password" value="••••••••••••••••••••••••••••••••••••" placeholder="Token de acesso da API do TikTok">
+              </div>
+            </div>
+
+            <div class="form-group-row">
+              <div>
+                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Facebook Pixel ID (Opcional)</label>
+                <input class="input-field-admin" type="text" value="FB-99824765099303" placeholder="ID do Facebook Pixel">
+              </div>
+              <div>
+                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Google Analytics Tracking (UA / G-)</label>
+                <input class="input-field-admin" type="text" placeholder="G-XXXXXXXXXX">
+              </div>
+            </div>
+
+            <button class="btn-admin-submit" type="submit">Salvar Configurações</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 5: ANTI-CLONE TRAPS -->
+    <!-- ========================================== -->
+    <div id="tab-security" class="tab-content">
+      <div class="content-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Proteção contra Clonagem (Anti-Clone Traps)</h3>
+            <p class="card-subtitle">Injete de forma oculta desvios de tráfego para proteger suas campanhas</p>
+          </div>
+          <div class="trap-status-badge">
+            <div class="trap-status-dot"></div>
+            Traps Ativas
+          </div>
+        </div>
+        <div class="card-body">
+          <p style="font-size:0.875rem; color:var(--slate-500); line-height:1.5; margin-bottom: 1.5rem;">
+            O sistema injeta silenciosamente 8 armadilhas JavaScript obfuscadas no seu arquivo de checkout. Se o código for clonado e hospedado em um domínio não autorizado, os clientes serão automaticamente redirecionados de volta para sua loja autorizada, impedindo a perda de vendas e o roubo do seu funil.
+          </p>
+
+          <form id="securityForm">
+            <div class="form-group-row">
+              <div>
+                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Domínio Autorizado Principal (Whitelist)</label>
+                <input class="input-field-admin" type="text" id="authorizedDomain" value="diadasmaestktk.netlify.app" required>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">URL de Redirecionamento (Destino do Clone)</label>
+                <input class="input-field-admin" type="text" id="redirectTarget" value="https://diadasmaestktk.netlify.app/panela2/" required>
+              </div>
+            </div>
+
+            <div class="gateway-toggle-row" style="margin-bottom: 1.5rem; justify-content: flex-start; padding: 0.5rem 0;">
+              <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.875rem; color:var(--slate-700); cursor:pointer;">
+                <input type="checkbox" id="cloakBotsDesktop" checked style="width:16px;height:16px;">
+                Ativar Cloaking para Bots e Desktop (Exibir Loja White)
+              </label>
+            </div>
+
+            <button class="btn-admin-submit" type="submit" id="injectTrapsBtn">Re-injetar Armadilhas Obfuscadas</button>
+          </form>
+
+          <!-- Simulated Console Console Logs -->
+          <div class="security-console" id="consoleLogs">
+            <div class="security-console-line success">
+              <span class="security-console-timestamp">[14:02:15]</span>
+              <span>[OK] Sistema de whitelisting inicializado.</span>
+            </div>
+            <div class="security-console-line">
+              <span class="security-console-timestamp">[14:02:16]</span>
+              <span>Injetando armadilha obfuscada #1 entre divs no checkout...</span>
+            </div>
+            <div class="security-console-line">
+              <span class="security-console-timestamp">[14:02:16]</span>
+              <span>Armadilha #2 (Verificação de Hostname) ativada.</span>
+            </div>
+            <div class="security-console-line success">
+              <span class="security-console-timestamp">[14:02:17]</span>
+              <span>[SUCESSO] 8/8 traps ativadas com assinatura hash MD5 e obfuscadas com sucesso.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Injections / Progress Simulation Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="card-title" id="modalTitle">Injetando Código Seguro</h3>
+    </div>
+    <div class="modal-body">
+      <p id="modalMessage">Iniciando obfuscador do checkout e gerando as armadilhas no Host Whitelist...</p>
+      <!-- Progress loading bar -->
+      <div class="progress-bar-container" id="progressBarContainer">
+        <div class="progress-bar-inner" id="progressBarInner"></div>
+      </div>
+      <div style="font-size:0.75rem; color:var(--slate-400); font-family:monospace;" id="modalConsoleLog">Aguardando...</div>
+    </div>
+    <div class="modal-footer" id="modalFooter" style="display:none;">
+      <button class="btn-modal-close" id="modalCloseBtn">Concluir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Auth Guard Execution: Prevent unauthenticated browsing
+  if (localStorage.getItem('admin_session') !== 'true') {
+    window.location.href = 'login.html';
+  } else {
+    // Session exists - hide overlay
+    document.getElementById('authShield').style.display = 'none';
+    
+    // Set custom Username
+    const savedUser = localStorage.getItem('admin_user') || 'Administrador';
+    document.getElementById('sidebarUsername').textContent = savedUser;
+    document.getElementById('avatarLetter').textContent = savedUser.charAt(0).toUpperCase();
+  }
+
+  // ==========================================
+  // Live Backend API Orders Manager
+  // ==========================================
+  let orders = [];
+
+  function updateDashboardMetrics(ordersList) {
+    const baselineSales = 48291.50;
+    const baselineCount = 209;
+    let dynamicSales = 0;
+    let dynamicCount = 0;
+    ordersList.forEach(order => {
+      if (order.status === 'approved') {
+        dynamicSales += parseFloat(order.amount) || 0;
+        dynamicCount += 1;
+      }
+      const icon = card.querySelector('.gateway-status-icon');
+      if (icon) {
+        icon.innerHTML = isActive
+          ? '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>'
+          : '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
+      }
+    });
+    const totalSales = baselineSales + dynamicSales;
+    const totalCount = baselineCount + dynamicCount;
+    const avgTicket = totalSales / totalCount;
+    document.getElementById('metricTotalSales').textContent = `R$ ${totalSales.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    document.getElementById('metricOrdersCount').textContent = totalCount;
+    document.getElementById('metricAvgTicket').textContent = `R$ ${avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  async function updateOrderStatus(orderId, newStatus) {
+    try {
+      const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          const idx = orders.findIndex(o => o.id === orderId);
+          if (idx !== -1) orders[idx].status = newStatus;
+          renderOrders(orders);
+          updateDashboardMetrics(orders);
+        }
+      }
+    } catch (e) {
+      console.warn('[Admin] Status update failed (offline mode):', e.message);
+      const idx = orders.findIndex(o => o.id === orderId);
+      if (idx !== -1) {
+        orders[idx].status = newStatus;
+        try { localStorage.setItem('orders', JSON.stringify(orders)); } catch(_) {}
+        renderOrders(orders);
+        updateDashboardMetrics(orders);
+      }
+    }
+  }
+
+  function renderOrders(ordersList) {
+    const tableBody = document.getElementById('ordersTableBody');
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+    const sortedOrders = [...ordersList].reverse();
+    sortedOrders.forEach(order => {
+      const tr = document.createElement('tr');
+      let statusClass = 'pending';
+      let statusText = 'Pendente';
+      if (order.status === 'approved') { statusClass = 'approved'; statusText = 'Aprovado'; }
+      else if (order.status === 'declined') { statusClass = 'declined'; statusText = 'Cancelado'; }
+      const encodedId = encodeURIComponent(order.id);
+      tr.innerHTML = `
+        <td style="font-weight:700; color:var(--primary);">${order.id}</td>
+        <td style="font-weight:600; color:var(--slate-900);">${order.name}</td>
+        <td>${order.product}</td>
+        <td>${order.date}</td>
+        <td style="font-weight:600;">R$ ${parseFloat(order.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td>
+          <span class="status-badge ${statusClass}">${statusText}</span>
+          <div style="display:flex;gap:4px;margin-top:4px;">
+            <button onclick="updateOrderStatus('${order.id}','approved')" title="Aprovar" style="font-size:0.65rem;padding:2px 6px;border:none;border-radius:4px;cursor:pointer;background:#10b981;color:#fff;font-weight:600;">✓</button>
+            <button onclick="updateOrderStatus('${order.id}','pending')" title="Pendente" style="font-size:0.65rem;padding:2px 6px;border:none;border-radius:4px;cursor:pointer;background:#f59e0b;color:#fff;font-weight:600;">⏳</button>
+            <button onclick="updateOrderStatus('${order.id}','declined')" title="Cancelar" style="font-size:0.65rem;padding:2px 6px;border:none;border-radius:4px;cursor:pointer;background:#ef4444;color:#fff;font-weight:600;">✕</button>
+          </div>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
+
+  // Load orders: try API first, fallback to localStorage
+  (async () => {
+    try {
+      const res = await fetch('/api/orders');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.orders)) {
+          orders = data.orders;
+          console.log('[Admin] Loaded', orders.length, 'orders from API.');
+        }
+      } else { throw new Error('Non-OK response'); }
+    } catch (e) {
+      console.warn('[Admin] API unavailable, falling back to localStorage:', e.message);
+      try {
+        const stored = localStorage.getItem('orders');
+        if (stored) { orders = JSON.parse(stored); }
+        else {
+          orders = [
+            { id: "#KP-1020", name: "Roberto Alencar de Lima", product: "Jogo Panelas Cerâmica 10 Peças (Preto Carbono)", date: "27/05/2026 - 15:10", amount: 61.90, status: "declined" },
+            { id: "#KP-1021", name: "Mariana Dias Costa", product: "Jogo Panelas Cerâmica 10 Peças (Vermelho Cereja)", date: "27/05/2026 - 18:24", amount: 61.90, status: "approved" },
+            { id: "#KP-1022", name: "Luiz Henrique Silva", product: "Jogo Panelas Cerâmica 10 Peças (Verde Esmeralda)", date: "28/05/2026 - 11:30", amount: 61.90, status: "pending" },
+            { id: "#KP-1023", name: "Ana Paula de Souza", product: "Jogo Panelas Cerâmica 10 Peças (Preto Carbono)", date: "28/05/2026 - 12:15", amount: 61.90, status: "approved" },
+            { id: "#KP-1024", name: "Samuel Ramos dos Santos", product: "Jogo Panelas Cerâmica 10 Peças (Vermelho Cereja)", date: "28/05/2026 - 13:42", amount: 61.90, status: "approved" }
+          ];
+          localStorage.setItem('orders', JSON.stringify(orders));
+        }
+      } catch (_) {}
+    }
+    renderOrders(orders);
+    updateDashboardMetrics(orders);
+  })();
+
+  // Sidebar navigation and tab display switching
+  const navBtns = document.querySelectorAll('.nav-item-btn');
+  const tabs = document.querySelectorAll('.tab-content');
+  const pageHeaderTitle = document.getElementById('pageHeaderTitle');
+
+  navBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Deactivate all nav buttons and tabs
+      navBtns.forEach(b => b.classList.remove('active'));
+      tabs.forEach(t => t.classList.remove('active'));
+
+      // Activate active targets
+      btn.classList.add('active');
+      const targetId = btn.getAttribute('data-target');
+      document.getElementById(targetId).classList.add('active');
+
+      // Update Top Title Header
+      pageHeaderTitle.textContent = btn.innerText;
+    });
+  });
+
+  const gatewayForm = document.getElementById('gatewayForm');
+  const gatewayCards = document.querySelectorAll('[data-gateway-card]');
+  const activeGatewayBadge = document.getElementById('activeGatewayBadge');
+
+  function syncGatewaySelection(activeGateway) {
+    gatewayCards.forEach(card => {
+      const isActive = card.getAttribute('data-gateway-card') === activeGateway;
+      card.classList.toggle('active', isActive);
+      const radio = card.querySelector('input[type="radio"]');
+      if (radio) radio.checked = isActive;
+    });
+
+    const gatewayNames = {
+      primecash: 'PrimeCash ativo',
+      manualpix: 'Pix Manual ativo',
+      disabled: 'Pix desativado'
+    };
+
+    if (activeGatewayBadge) {
+      activeGatewayBadge.textContent = gatewayNames[activeGateway] || 'Gateway ativo';
+      activeGatewayBadge.className = `status-badge ${activeGateway === 'disabled' ? 'declined' : 'approved'}`;
+    }
+  }
+
+  const savedGatewaySettings = JSON.parse(localStorage.getItem('admin_gateway_settings') || 'null');
+  if (savedGatewaySettings) {
+    syncGatewaySelection(savedGatewaySettings.activeGateway || 'primecash');
+    document.getElementById('gatewayApiUrl').value = savedGatewaySettings.apiUrl || document.getElementById('gatewayApiUrl').value;
+    document.getElementById('gatewayPublicKey').value = savedGatewaySettings.publicKey || document.getElementById('gatewayPublicKey').value;
+    document.getElementById('gatewaySecretKey').value = savedGatewaySettings.secretKey || document.getElementById('gatewaySecretKey').value;
+    document.getElementById('gatewayWebhook').value = savedGatewaySettings.webhook || document.getElementById('gatewayWebhook').value;
+    document.getElementById('gatewayAutoApprove').checked = savedGatewaySettings.autoApprove !== false;
+  }
+
+  gatewayCards.forEach(card => {
+    card.addEventListener('click', () => {
+      syncGatewaySelection(card.getAttribute('data-gateway-card'));
+    });
+  });
+
+  if (gatewayForm) {
+    gatewayForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const activeGateway = document.querySelector('input[name="activeGateway"]:checked')?.value || 'primecash';
+      const gatewaySettings = {
+        activeGateway,
+        apiUrl: document.getElementById('gatewayApiUrl').value.trim(),
+        publicKey: document.getElementById('gatewayPublicKey').value.trim(),
+        secretKey: document.getElementById('gatewaySecretKey').value,
+        webhook: document.getElementById('gatewayWebhook').value.trim(),
+        autoApprove: document.getElementById('gatewayAutoApprove').checked
+      };
+
+      localStorage.setItem('admin_gateway_settings', JSON.stringify(gatewaySettings));
+      syncGatewaySelection(activeGateway);
+      alert('Configurações de Gateway salvas com sucesso!');
+    });
+  }
+
+  const gatewayModalOverlayEl = document.getElementById('gatewayModalOverlay');
+  const gatewayEditForm = document.getElementById('gatewayEditForm');
+  const gatewayCancelBtn = document.getElementById('gatewayModalCancel');
+  let currentGatewayEdit = 'primecash';
+  const gatewayDefaults = {
+    activeGateway: 'primecash',
+    gateways: {
+      primecash: {
+        apiUrl: 'https://api.primecash.app/v1',
+        publicKey: 'pk_primecash_live_********',
+        secretKey: 'sk_primecash_live_********',
+        webhook: 'https://diadasmaestktk.netlify.app/api/pix/webhook',
+        logoUrl: '',
+        autoApprove: true
+      },
+      manualpix: { apiUrl: '', publicKey: '', secretKey: '', webhook: '', logoUrl: '', autoApprove: true },
+      mercadopago: { apiUrl: 'https://api.mercadopago.com/v1', publicKey: '', secretKey: '', webhook: '', logoUrl: '', autoApprove: true }
+    }
+  };
+
+  function readGatewayStore() {
+    const stored = JSON.parse(localStorage.getItem('admin_gateway_settings') || 'null');
+    return {
+      ...gatewayDefaults,
+      ...(stored || {}),
+      gateways: {
+        ...gatewayDefaults.gateways,
+        ...((stored && stored.gateways) || {})
+      }
+    };
+  }
+
+  function paintGatewayCards(activeGateway) {
+    const store = readGatewayStore();
+    gatewayCards.forEach(card => {
+      const isActive = card.getAttribute('data-gateway-card') === activeGateway;
+      const badge = card.querySelector('.status-badge');
+      card.classList.toggle('active', isActive);
+      if (badge) {
+        badge.textContent = isActive ? 'Ativo' : 'Cadastrado';
+        badge.className = `status-badge ${isActive ? 'approved' : 'pending'}`;
+      }
+      const icon = card.querySelector('.gateway-status-icon');
+      if (icon) {
+        icon.innerHTML = isActive
+          ? '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>'
+          : '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
+      }
+      const logo = card.querySelector('[data-gateway-logo]');
+      const gatewayId = card.getAttribute('data-gateway-card');
+      const logoUrl = store.gateways[gatewayId]?.logoUrl || '';
+      if (logo) {
+        const fallbackLogos = { primecash: 'PC', manualpix: 'PM', mercadopago: 'MP' };
+        logo.innerHTML = '';
+        if (logoUrl) {
+          const img = document.createElement('img');
+          img.src = logoUrl;
+          img.alt = '';
+          logo.appendChild(img);
+        } else {
+          logo.textContent = fallbackLogos[gatewayId];
+        }
+      }
+    });
+
+    const gatewayNames = {
+      primecash: 'PrimeCash ativo',
+      manualpix: 'Pix Manual ativo',
+      mercadopago: 'Mercado Pago ativo'
+    };
+
+    if (activeGatewayBadge) {
+      activeGatewayBadge.textContent = gatewayNames[activeGateway] || 'Gateway ativo';
+      activeGatewayBadge.className = 'status-badge approved';
+    }
+  }
+
+  function openGatewayEditor(gatewayId) {
+    const store = readGatewayStore();
+    const gateway = store.gateways[gatewayId] || {};
+    const names = { primecash: 'PrimeCash', manualpix: 'Pix Manual', mercadopago: 'Mercado Pago' };
+    currentGatewayEdit = gatewayId;
+    document.getElementById('gatewayModalTitle').textContent = `Editar ${names[gatewayId] || 'Gateway'}`;
+    document.getElementById('gatewayModalApiUrl').value = gateway.apiUrl || '';
+    document.getElementById('gatewayModalPublicKey').value = gateway.publicKey || '';
+    document.getElementById('gatewayModalSecretKey').value = gateway.secretKey || '';
+    document.getElementById('gatewayModalWebhook').value = gateway.webhook || '';
+    document.getElementById('gatewayModalLogoUrl').value = gateway.logoUrl || '';
+    document.getElementById('gatewayModalAutoApprove').checked = gateway.autoApprove !== false;
+    document.getElementById('gatewayModalActive').checked = store.activeGateway === gatewayId;
+    document.getElementById('gatewayModalAdminPassword').value = '';
+    gatewayModalOverlayEl.style.display = 'flex';
+  }
+
+  paintGatewayCards(readGatewayStore().activeGateway);
+  gatewayCards.forEach(card => {
+    card.addEventListener('click', () => openGatewayEditor(card.getAttribute('data-gateway-card')));
+  });
+
+  if (gatewayEditForm) {
+    gatewayEditForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (document.getElementById('gatewayModalAdminPassword').value !== '530348') {
+        alert('Senha incorreta. Alterações não foram salvas.');
+        return;
+      }
+      const store = readGatewayStore();
+      store.gateways[currentGatewayEdit] = {
+        apiUrl: document.getElementById('gatewayModalApiUrl').value.trim(),
+        publicKey: document.getElementById('gatewayModalPublicKey').value.trim(),
+        secretKey: document.getElementById('gatewayModalSecretKey').value,
+        webhook: document.getElementById('gatewayModalWebhook').value.trim(),
+        logoUrl: document.getElementById('gatewayModalLogoUrl').value.trim(),
+        autoApprove: document.getElementById('gatewayModalAutoApprove').checked
+      };
+      if (document.getElementById('gatewayModalActive').checked) {
+        store.activeGateway = currentGatewayEdit;
+      }
+      localStorage.setItem('admin_gateway_settings', JSON.stringify(store));
+      paintGatewayCards(store.activeGateway);
+      gatewayModalOverlayEl.style.display = 'none';
+      alert('Configurações de Gateway salvas com sucesso!');
+    });
+  }
+
+  if (gatewayCancelBtn) {
+    gatewayCancelBtn.addEventListener('click', () => {
+      gatewayModalOverlayEl.style.display = 'none';
+      paintGatewayCards(readGatewayStore().activeGateway);
+    });
+  }
+
+  // Logout routine
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem('admin_session');
+    localStorage.removeItem('admin_user');
+    window.location.href = 'login.html';
+  });
+
+  // ── Real Anti-Clone Trap Injector (connects to backend API) ───────────────
+  const securityForm = document.getElementById('securityForm');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalMessage = document.getElementById('modalMessage');
+  const progressBarContainer = document.getElementById('progressBarContainer');
+  const progressBarInner = document.getElementById('progressBarInner');
+  const modalConsoleLog = document.getElementById('modalConsoleLog');
+  const modalFooter = document.getElementById('modalFooter');
+  const modalCloseBtn = document.getElementById('modalCloseBtn');
+  const consoleLogs = document.getElementById('consoleLogs');
+
+  securityForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const domain = document.getElementById('authorizedDomain').value.trim();
+    const redirectTarget = document.getElementById('redirectTarget').value.trim();
+    const cloakBotsDesktop = document.getElementById('cloakBotsDesktop').checked;
+
+    // Show modal with animated progress UI
+    modalOverlay.style.display = 'flex';
+    modalFooter.style.display = 'none';
+    progressBarContainer.style.display = 'block';
+    progressBarInner.style.width = '0%';
+    modalMessage.textContent = `Compilando armadilhas obfuscadas para o domínio: ${domain}...`;
+
+    const logs = [
+      'Inicializando compilador de traps JavaScript...',
+      'Injetando armadilha #1 (IIFE Hostname Guard)...',
+      'Injetando armadilha #2 (Split-Array Domain Check)...',
+      'Injetando armadilha #3 (atob Obfuscated Check)...',
+      'Injetando armadilha #4 (Top/Self Frame Guard)...',
+      'Injetando armadilha #5 (Click Event Observer)...',
+      'Injetando armadilha #6 (Interval Scanner)...',
+      'Injetando armadilha #7 (Image onerror Exploit)...',
+      'Injetando armadilha #8 (Canonical Cross-Check)...',
+      cloakBotsDesktop ? 'Injetando armadilha #9 (Bot & Desktop Cloaking)...' : 'Pulando Cloaking (desativado)...',
+      `Enviando payload para o servidor: reescrevendo checkout.html e Kit Panela.html...`
+    ];
+
+    // Animate progress while API call is in flight
+    let step = 0;
+    const maxSteps = logs.length;
+    const tickInterval = setInterval(() => {
+      if (step < maxSteps - 1) {
+        step++;
+        progressBarInner.style.width = `${(step / maxSteps) * 90}%`;
+        modalConsoleLog.textContent = `> ${logs[step - 1]}`;
+      }
+    }, 400);
+
+    try {
+      const res = await fetch('/api/security/inject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ authorizedDomain: domain, redirectTarget, cloakBotsDesktop })
+      });
+
+      clearInterval(tickInterval);
+      progressBarInner.style.width = '100%';
+
+      if (res.ok) {
+        const data = await res.json();
+        modalMessage.innerHTML = `<span style="color:#10b981;font-weight:700;">✓ Injeção Concluída com Sucesso!</span><br>8 armadilhas anti-clonagem injetadas em: ${(data.filesUpdated || []).join(', ')}.`;
+        modalConsoleLog.textContent = `> ${data.message || 'Traps compiladas e salvas no servidor.'}`;
+      } else {
+        const err = await res.json();
+        modalMessage.innerHTML = `<span style="color:#ef4444;font-weight:700;">⚠ Injeção via API falhou.</span><br>Modo simulado ativado (somente frontend). Erro: ${err.error || res.status}`;
+        modalConsoleLog.textContent = '> [AVISO] Servidor offline. Nenhum arquivo foi modificado.';
+      }
+    } catch (apiErr) {
+      clearInterval(tickInterval);
+      progressBarInner.style.width = '100%';
+      modalMessage.innerHTML = `<span style="color:#f59e0b;font-weight:700;">⚠ Servidor não encontrado.</span><br>Execute node server.js para injeção real nos arquivos HTML.`;
+      modalConsoleLog.textContent = `> [OFFLINE] ${apiErr.message}`;
+    }
+
+    modalFooter.style.display = 'flex';
+
+    // Append a timestamped log entry to the console panel
+    const timestamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const newLine = document.createElement('div');
+    newLine.className = 'security-console-line success';
+    newLine.innerHTML = `<span class="security-console-timestamp">[${timestamp}]</span> <span>[INJEÇÃO] Traps compiladas para domínio whitelist: ${domain}.</span>`;
+    if (consoleLogs) consoleLogs.insertBefore(newLine, consoleLogs.firstChild);
+  });
+
+  // Close security modal popup
+  modalCloseBtn.addEventListener('click', () => {
+    modalOverlay.style.display = 'none';
+  });
+</script>
+</body>
+</html>
