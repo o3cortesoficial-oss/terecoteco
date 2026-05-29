@@ -2295,7 +2295,6 @@
 
                 <span class="tag-lightning-offer">
 
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="#ffffff" style="vertical-align: middle; display: inline-block; margin-right: 2px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Oferta Relâmpago <span id="lightningTimer">08:06:39</span>
 
                 </span>
 
@@ -2583,7 +2582,6 @@
 
         <span>Fazer pedido</span>
 
-        <span class="btn-submit-subtext" id="buttonTimer">O cupom expira em 08:06:39</span>
 
       </button>
 
@@ -2963,9 +2961,9 @@
 
     function startVisualCountdown() {
 
-      const lightningTimer = document.getElementById('lightningTimer');
+      const null_element = document.getElementById('null_element');
 
-      const buttonTimer = document.getElementById('buttonTimer');
+      const null_element = document.getElementById('null_element');
 
       
 
@@ -2999,9 +2997,9 @@
 
         const timeFormatted = `${hStr}:${mStr}:${sStr}`;
 
-        if (lightningTimer) lightningTimer.textContent = timeFormatted;
+        if (null_element) null_element.textContent = timeFormatted;
 
-        if (buttonTimer) buttonTimer.textContent = `O cupom expira em ${timeFormatted}`;
+        if (null_element) null_element.textContent = `O cupom expira em ${timeFormatted}`;
 
       }, 1000);
 
