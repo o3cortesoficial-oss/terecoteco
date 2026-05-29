@@ -771,12 +771,144 @@
       gap: 1rem;
     }
 
+    .theme-editor-modal {
+      max-width: min(1420px, 96vw);
+      height: min(900px, 92vh);
+      display: grid;
+      grid-template-columns: 410px minmax(0, 1fr);
+      border-radius: 14px;
+    }
+
+    .theme-editor-sidebar {
+      border-right: 1px solid var(--slate-200);
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .theme-editor-sidebar .modal-header {
+      flex-shrink: 0;
+    }
+
+    .theme-editor-body {
+      padding: 1rem;
+      overflow-y: auto;
+    }
+
+    .theme-editor-preview {
+      background: #e5e7eb;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .preview-toolbar {
+      height: 54px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--slate-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0 1rem;
+      flex-shrink: 0;
+    }
+
+    .preview-frame-wrap {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 1rem;
+      overflow: auto;
+    }
+
+    .product-preview-frame {
+      width: 390px;
+      max-width: 100%;
+      min-height: 100%;
+      border: 1px solid var(--slate-300);
+      border-radius: 18px;
+      background: #ffffff;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+    }
+
+    .editor-section {
+      border: 1px solid var(--slate-200);
+      border-radius: var(--border-radius-sm);
+      padding: 0.875rem;
+      margin-bottom: 0.875rem;
+      background: var(--slate-50);
+    }
+
+    .editor-section-title {
+      font-size: 0.78rem;
+      font-weight: 900;
+      color: var(--slate-800);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.75rem;
+    }
+
+    .image-list,
+    .comment-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+      margin-top: 0.75rem;
+    }
+
+    .image-row,
+    .comment-row {
+      border: 1px solid var(--slate-200);
+      background: #ffffff;
+      border-radius: var(--border-radius-sm);
+      padding: 0.625rem;
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .image-row {
+      grid-template-columns: 54px minmax(0, 1fr) auto;
+      align-items: center;
+    }
+
+    .image-row img {
+      width: 54px;
+      height: 54px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: var(--slate-100);
+    }
+
+    .mini-remove-btn {
+      border: none;
+      background: #fee2e2;
+      color: #991b1b;
+      border-radius: 8px;
+      padding: 0.45rem 0.6rem;
+      font-size: 0.72rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
     @media (max-width: 768px) {
       .product-toolbar,
       .product-modal-grid {
         grid-template-columns: 1fr;
         flex-direction: column;
         align-items: stretch;
+      }
+
+      .theme-editor-modal {
+        grid-template-columns: 1fr;
+        height: 94vh;
+      }
+
+      .theme-editor-preview {
+        display: none;
       }
     }
 
@@ -1400,73 +1532,84 @@
     </div>
 
     <div class="modal-overlay" id="productModalOverlay">
-      <div class="modal">
-        <div class="modal-header">
-          <h3 class="card-title" id="productModalTitle">Novo Produto</h3>
-        </div>
-        <form class="modal-body" id="productEditForm">
-          <div class="product-modal-grid">
+      <div class="modal theme-editor-modal">
+        <form class="theme-editor-sidebar" id="productEditForm">
+          <div class="modal-header">
             <div>
-              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Nome do Produto</label>
-              <input class="input-field-admin" id="productModalName" type="text" placeholder="Nome que aparece na pagina" required>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Slug do Link</label>
-              <input class="input-field-admin" id="productModalSlug" type="text" placeholder="kit-panela">
-            </div>
-            <div>
-              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Preco Final</label>
-              <input class="input-field-admin" id="productModalPrice" type="number" min="0" step="0.01" placeholder="61.90" required>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Preco Original</label>
-              <input class="input-field-admin" id="productModalOriginalPrice" type="number" min="0" step="0.01" placeholder="199.00">
-            </div>
-            <div>
-              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Desconto do Produto</label>
-              <input class="input-field-admin" id="productModalDiscount" type="number" min="0" step="0.01" placeholder="137.10">
-            </div>
-            <div>
-              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Cupom TikTok Shop</label>
-              <input class="input-field-admin" id="productModalCoupon" type="number" min="0" step="0.01" placeholder="18.00">
-            </div>
-            <div>
-              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Imagem Principal</label>
-              <input class="input-field-admin" id="productModalImageUrl" type="text" placeholder="https://site.com/produto.png">
-            </div>
-            <div>
-              <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Subtitulo Interno</label>
-              <input class="input-field-admin" id="productModalSubtitle" type="text" placeholder="Campanha, nicho ou observacao">
+              <h3 class="card-title" id="productModalTitle">Editor de Produto</h3>
+              <p class="card-subtitle">Layout Kit Panela com preview em tempo real</p>
             </div>
           </div>
+          <div class="theme-editor-body">
+            <div class="editor-section">
+              <div class="editor-section-title">Produto</div>
+              <div style="display:grid;gap:0.75rem;">
+                <input class="input-field-admin" id="productModalName" type="text" placeholder="Nome que aparece na pagina" required>
+                <input class="input-field-admin" id="productModalSlug" type="text" placeholder="slug-do-link">
+                <input class="input-field-admin" id="productModalSubtitle" type="text" placeholder="Subtitulo interno">
+                <textarea class="input-field-admin" id="productModalDescription" rows="3" placeholder="Descricao da pagina"></textarea>
+              </div>
+            </div>
 
-          <div style="margin-top: 1rem;">
-            <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Descricao da Pagina</label>
-            <textarea class="input-field-admin" id="productModalDescription" rows="3" placeholder="Texto curto para substituir a descricao do layout base"></textarea>
+            <div class="editor-section">
+              <div class="editor-section-title">Precos</div>
+              <div class="product-modal-grid">
+                <input class="input-field-admin" id="productModalPrice" type="number" min="0" step="0.01" placeholder="Preco final" required>
+                <input class="input-field-admin" id="productModalOriginalPrice" type="number" min="0" step="0.01" placeholder="Preco original">
+                <input class="input-field-admin" id="productModalDiscount" type="number" min="0" step="0.01" placeholder="Desconto produto">
+                <input class="input-field-admin" id="productModalCoupon" type="number" min="0" step="0.01" placeholder="Cupom TikTok">
+              </div>
+            </div>
+
+            <div class="editor-section">
+              <div class="editor-section-title">Imagens do produto</div>
+              <input class="input-field-admin" id="productModalImageUrl" type="text" placeholder="URL de imagem para adicionar">
+              <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+                <button class="btn-admin-secondary" type="button" id="productAddImageUrl">Adicionar URL</button>
+                <label class="btn-admin-secondary" style="cursor:pointer;">
+                  Upload
+                  <input id="productImageUpload" type="file" accept="image/*" multiple style="display:none;">
+                </label>
+              </div>
+              <div class="image-list" id="productImagesList"></div>
+            </div>
+
+            <div class="editor-section">
+              <div class="editor-section-title">Comentarios</div>
+              <div class="comment-list" id="productCommentsList"></div>
+              <button class="btn-admin-secondary" type="button" id="productAddComment" style="margin-top:0.75rem;">Adicionar comentario</button>
+            </div>
+
+            <div class="editor-section">
+              <div class="editor-section-title">Analise</div>
+              <textarea class="input-field-admin" id="productModalAnalysis" rows="3" placeholder="Notas de campanha, margem, fonte de trafego ou teste A/B"></textarea>
+            </div>
+
+            <div class="editor-section">
+              <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.8125rem;font-weight:800;color:var(--slate-700);">
+                <input type="checkbox" id="productModalActive" checked>
+                Produto ativo e link publico
+              </label>
+              <input class="input-field-admin" id="productModalAdminPassword" type="password" placeholder="Senha para salvar alteracoes" autocomplete="off" required style="margin-top:0.75rem;">
+            </div>
           </div>
-
-          <div style="margin-top: 1rem;">
-            <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Analise / Observacoes</label>
-            <textarea class="input-field-admin" id="productModalAnalysis" rows="3" placeholder="Notas de campanha, margem, fonte de trafego ou teste A/B"></textarea>
-          </div>
-
-          <div class="gateway-toggle-row">
-            <label>
-              <input type="checkbox" id="productModalActive" checked>
-              Produto ativo e link publico
-            </label>
-          </div>
-
-          <div style="margin-top: 1rem;">
-            <label class="form-label" style="font-size:0.75rem; margin-bottom: 0.375rem;">Senha para salvar alteracoes</label>
-            <input class="input-field-admin" id="productModalAdminPassword" type="password" placeholder="Digite a senha de confirmacao" autocomplete="off" required>
-          </div>
-
-          <div class="gateway-modal-actions">
+          <div class="gateway-modal-actions" style="padding:1rem;border-top:1px solid var(--slate-200);margin-top:0;">
             <button class="btn-admin-secondary" type="button" id="productModalCancel">Cancelar</button>
             <button class="btn-admin-submit" type="submit">Salvar Produto</button>
           </div>
         </form>
+        <div class="theme-editor-preview">
+          <div class="preview-toolbar">
+            <div>
+              <div style="font-size:0.8125rem;font-weight:900;color:var(--slate-900);">Preview da pagina</div>
+              <div class="card-subtitle" id="productPreviewUrl">/produto/novo-produto</div>
+            </div>
+            <a class="btn-action-light" id="productPreviewOpenLink" href="/Kit%20Panela.html" target="_blank">Abrir link</a>
+          </div>
+          <div class="preview-frame-wrap">
+            <iframe class="product-preview-frame" id="productPreviewFrame" title="Preview do produto"></iframe>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1813,6 +1956,13 @@
   const productEditForm = document.getElementById('productEditForm');
   const productCancelBtn = document.getElementById('productModalCancel');
   const newProductBtn = document.getElementById('btnNewProduct');
+  const productImagesList = document.getElementById('productImagesList');
+  const productCommentsList = document.getElementById('productCommentsList');
+  const productPreviewFrame = document.getElementById('productPreviewFrame');
+  const productPreviewUrl = document.getElementById('productPreviewUrl');
+  const productPreviewOpenLink = document.getElementById('productPreviewOpenLink');
+  let productEditorImages = [];
+  let productEditorComments = [];
 
   function productById(id) {
     return products.find(product => String(product.id) === String(id)) || {};
@@ -1820,6 +1970,101 @@
 
   function productLink(slug) {
     return '/produto/' + encodeURIComponent(slug || '');
+  }
+
+  function readProductDraft() {
+    const slug = document.getElementById('productModalSlug').value.trim();
+    return {
+      name: document.getElementById('productModalName').value.trim() || 'Novo Produto',
+      slug: slug || 'novo-produto',
+      price: Number(document.getElementById('productModalPrice').value || 0),
+      originalPrice: Number(document.getElementById('productModalOriginalPrice').value || 0),
+      discount: Number(document.getElementById('productModalDiscount').value || 0),
+      coupon: Number(document.getElementById('productModalCoupon').value || 0),
+      imageUrl: productEditorImages[0] || document.getElementById('productModalImageUrl').value.trim(),
+      images: productEditorImages.slice(),
+      subtitle: document.getElementById('productModalSubtitle').value.trim(),
+      description: document.getElementById('productModalDescription').value.trim(),
+      analysisNotes: document.getElementById('productModalAnalysis').value.trim(),
+      comments: productEditorComments.slice(),
+      isActive: document.getElementById('productModalActive').checked
+    };
+  }
+
+  function buildProductPreviewHtml(product) {
+    const images = product.images.length ? product.images : [''];
+    const hero = images[0] || 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="390" height="360"><rect width="100%" height="100%" fill="#f1f5f9"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#64748b" font-family="Arial" font-size="18">Imagem do produto</text></svg>');
+    const thumbs = images.map(src => `<img src="${src}" alt="">`).join('');
+    const comments = product.comments.map(item => {
+      const rating = Math.max(1, Math.min(5, Number(item.rating || 5)));
+      return `<div class="comment">
+        <div class="comment-head">
+          ${item.avatar ? `<img src="${item.avatar}" alt="">` : `<span></span>`}
+          <div><strong>${escapeAdminHtml(item.name || 'Cliente')}</strong><small>${'★★★★★'.slice(0, rating)}</small></div>
+        </div>
+        <p>${escapeAdminHtml(item.text || '')}</p>
+        ${item.image ? `<img class="comment-img" src="${item.image}" alt="">` : ''}
+      </div>`;
+    }).join('');
+    return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+      *{box-sizing:border-box}body{margin:0;background:#f7f7f9;color:#111;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}.top{height:48px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;border-bottom:1px solid #eee}.hero{background:#fff}.hero img{width:100%;height:330px;object-fit:cover;display:block}.thumbs{display:flex;gap:8px;padding:10px 12px;overflow:auto;background:#fff}.thumbs img{width:58px;height:58px;object-fit:cover;border-radius:8px;border:1px solid #eee}.box{background:#fff;margin-top:10px;padding:14px}.sold{color:#fe2c55;font-weight:900;font-size:13px;margin-bottom:8px}.title{font-size:18px;font-weight:900;line-height:1.25}.desc{font-size:13px;color:#64748b;line-height:1.45;margin-top:8px}.price{display:flex;align-items:flex-end;gap:8px;margin-top:12px}.price strong{font-size:28px;color:#fe2c55}.price s{font-size:14px;color:#94a3b8}.coupon{margin-top:10px;border-radius:10px;background:#fff1f4;color:#fe2c55;padding:10px;font-weight:900;display:flex;justify-content:space-between}.comments h3{font-size:16px;margin:0 0 4px}.comment{border-top:1px solid #f1f1f1;padding:12px 0}.comment-head{display:flex;gap:10px;align-items:center}.comment-head img,.comment-head span{width:34px;height:34px;border-radius:50%;background:#e2e8f0;object-fit:cover}.comment-head strong{display:block;font-size:13px}.comment-head small{color:#f59e0b;font-size:11px}.comment p{font-size:13px;line-height:1.45;color:#334155;margin:8px 0 0}.comment-img{width:78px;height:78px;border-radius:8px;object-fit:cover;margin-top:8px}.bar{position:sticky;bottom:0;background:#fff;padding:12px;border-top:1px solid #eee}.bar button{width:100%;height:48px;border:0;border-radius:999px;background:#fe2c55;color:#fff;font-size:16px;font-weight:900}
+    </style></head><body><div class="top">TikTok Shop</div><section class="hero"><img src="${hero}" alt=""><div class="thumbs">${thumbs}</div></section><section class="box"><div class="sold">🔥 48.1K vendidos</div><div class="title">${escapeAdminHtml(product.name)}</div><div class="desc">${escapeAdminHtml(product.description || product.subtitle || 'Descricao do produto')}</div><div class="price"><strong>R$ ${product.price.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>${product.originalPrice ? `<s>R$ ${product.originalPrice.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</s>` : ''}</div><div class="coupon"><span>Desconto do TikTok Shop</span><span>- R$ ${product.coupon.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div></section><section class="box comments"><h3>Comentarios dos compradores</h3>${comments || '<p class="desc">Nenhum comentario cadastrado ainda.</p>'}</section><div class="bar"><button>Comprar agora</button></div></body></html>`;
+  }
+
+  function updateProductPreview() {
+    if (!productPreviewFrame) return;
+    const product = readProductDraft();
+    const link = productLink(product.slug);
+    productPreviewUrl.textContent = link;
+    productPreviewOpenLink.href = link;
+    productPreviewFrame.srcdoc = buildProductPreviewHtml(product);
+  }
+
+  function renderProductImages() {
+    if (!productImagesList) return;
+    productImagesList.innerHTML = productEditorImages.length ? '' : '<div class="card-subtitle">Nenhuma imagem adicionada.</div>';
+    productEditorImages.forEach((src, index) => {
+      const row = document.createElement('div');
+      row.className = 'image-row';
+      row.innerHTML = `<img src="${src}" alt=""><div style="font-size:0.75rem;color:var(--slate-500);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Imagem ${index + 1}</div><button class="mini-remove-btn" type="button">Remover</button>`;
+      row.querySelector('button').addEventListener('click', () => {
+        productEditorImages.splice(index, 1);
+        renderProductImages();
+        updateProductPreview();
+      });
+      productImagesList.appendChild(row);
+    });
+  }
+
+  function renderProductComments() {
+    if (!productCommentsList) return;
+    productCommentsList.innerHTML = productEditorComments.length ? '' : '<div class="card-subtitle">Nenhum comentario cadastrado.</div>';
+    productEditorComments.forEach((comment, index) => {
+      const row = document.createElement('div');
+      row.className = 'comment-row';
+      row.innerHTML = `
+        <input class="input-field-admin" data-field="name" value="${escapeAdminHtml(comment.name || '')}" placeholder="Nome do cliente">
+        <textarea class="input-field-admin" data-field="text" rows="2" placeholder="Comentario">${escapeAdminHtml(comment.text || '')}</textarea>
+        <div class="product-modal-grid">
+          <input class="input-field-admin" data-field="rating" type="number" min="1" max="5" value="${comment.rating || 5}" placeholder="Nota">
+          <input class="input-field-admin" data-field="avatar" value="${escapeAdminHtml(comment.avatar || '')}" placeholder="URL avatar">
+        </div>
+        <input class="input-field-admin" data-field="image" value="${escapeAdminHtml(comment.image || '')}" placeholder="URL imagem do comentario">
+        <button class="mini-remove-btn" type="button">Remover comentario</button>
+      `;
+      row.querySelectorAll('[data-field]').forEach(input => {
+        input.addEventListener('input', () => {
+          productEditorComments[index][input.getAttribute('data-field')] = input.value;
+          updateProductPreview();
+        });
+      });
+      row.querySelector('button').addEventListener('click', () => {
+        productEditorComments.splice(index, 1);
+        renderProductComments();
+        updateProductPreview();
+      });
+      productCommentsList.appendChild(row);
+    });
   }
 
   function renderProducts(productsList) {
@@ -1894,6 +2139,13 @@
     document.getElementById('productModalAnalysis').value = product.analysisNotes || '';
     document.getElementById('productModalActive').checked = product.isActive !== false;
     document.getElementById('productModalAdminPassword').value = '';
+    productEditorImages = Array.isArray(product.images) && product.images.length
+      ? product.images.slice()
+      : (product.imageUrl ? [product.imageUrl] : []);
+    productEditorComments = Array.isArray(product.comments) ? product.comments.map(comment => ({ ...comment })) : [];
+    renderProductImages();
+    renderProductComments();
+    updateProductPreview();
   }
 
   function openProductEditor(productId) {
@@ -1902,6 +2154,7 @@
     document.getElementById('productModalTitle').textContent = productId ? 'Editar Produto' : 'Novo Produto';
     fillProductForm(product);
     productModalOverlayEl.style.display = 'flex';
+    updateProductPreview();
   }
 
   if (newProductBtn) {
@@ -1914,6 +2167,41 @@
     });
   }
 
+  document.querySelectorAll('#productEditForm input, #productEditForm textarea').forEach(input => {
+    input.addEventListener('input', updateProductPreview);
+    input.addEventListener('change', updateProductPreview);
+  });
+
+  document.getElementById('productAddImageUrl').addEventListener('click', () => {
+    const input = document.getElementById('productModalImageUrl');
+    const url = input.value.trim();
+    if (!url) return;
+    productEditorImages.push(url);
+    input.value = '';
+    renderProductImages();
+    updateProductPreview();
+  });
+
+  document.getElementById('productImageUpload').addEventListener('change', async (event) => {
+    const files = Array.from(event.target.files || []);
+    const readers = files.map(file => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    }));
+    productEditorImages.push(...await Promise.all(readers));
+    event.target.value = '';
+    renderProductImages();
+    updateProductPreview();
+  });
+
+  document.getElementById('productAddComment').addEventListener('click', () => {
+    productEditorComments.push({ name: '', text: '', rating: 5, avatar: '', image: '' });
+    renderProductComments();
+    updateProductPreview();
+  });
+
   if (productEditForm) {
     productEditForm.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -1925,7 +2213,9 @@
         originalPrice: document.getElementById('productModalOriginalPrice').value,
         discount: document.getElementById('productModalDiscount').value,
         coupon: document.getElementById('productModalCoupon').value,
-        imageUrl: document.getElementById('productModalImageUrl').value.trim(),
+        imageUrl: productEditorImages[0] || document.getElementById('productModalImageUrl').value.trim(),
+        images: productEditorImages,
+        comments: productEditorComments,
         subtitle: document.getElementById('productModalSubtitle').value.trim(),
         description: document.getElementById('productModalDescription').value.trim(),
         analysisNotes: document.getElementById('productModalAnalysis').value.trim(),

@@ -65,6 +65,8 @@ function sanitizeGateway(row) {
 }
 
 function sanitizeProduct(row) {
+  const images = Array.isArray(row.images) ? row.images : [];
+  const comments = Array.isArray(row.comments) ? row.comments : [];
   return {
     id: row.id,
     slug: row.slug,
@@ -76,6 +78,8 @@ function sanitizeProduct(row) {
     discount: Number(row.discount || 0),
     coupon: Number(row.coupon || 0),
     imageUrl: row.image_url || '',
+    images,
+    comments,
     analysisNotes: row.analysis_notes || '',
     isActive: row.is_active !== false,
     viewCount: Number(row.view_count || 0),
@@ -571,6 +575,8 @@ app.post('/api/products', async (req, res) => {
       discount,
       coupon,
       imageUrl,
+      images,
+      comments,
       analysisNotes,
       isActive
     } = req.body;
@@ -593,6 +599,8 @@ app.post('/api/products', async (req, res) => {
         discount: Number(discount || 0),
         coupon: Number(coupon || 0),
         image_url: imageUrl || '',
+        images: Array.isArray(images) ? images : [],
+        comments: Array.isArray(comments) ? comments : [],
         analysis_notes: analysisNotes || '',
         is_active: isActive !== false,
         updated_at: new Date().toISOString()
@@ -622,6 +630,8 @@ app.put('/api/products/:id', async (req, res) => {
       discount,
       coupon,
       imageUrl,
+      images,
+      comments,
       analysisNotes,
       isActive
     } = req.body;
@@ -644,6 +654,8 @@ app.put('/api/products/:id', async (req, res) => {
         discount: Number(discount || 0),
         coupon: Number(coupon || 0),
         image_url: imageUrl || '',
+        images: Array.isArray(images) ? images : [],
+        comments: Array.isArray(comments) ? comments : [],
         analysis_notes: analysisNotes || '',
         is_active: isActive !== false,
         updated_at: new Date().toISOString()
@@ -801,6 +813,11 @@ window.__PRODUCT_PAGE__ = ${productJson};
   function money(value) {
     return 'R$ ' + Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
+  function h(value) {
+    return String(value || '').replace(/[&<>"']/g, function (char) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char];
+    });
+  }
   function replaceText(from, to) {
     if (!to) return;
     var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -813,6 +830,7 @@ window.__PRODUCT_PAGE__ = ${productJson};
     });
   }
   function applyProduct() {
+    var gallery = Array.isArray(product.images) && product.images.length ? product.images : (product.imageUrl ? [product.imageUrl] : []);
     document.title = product.name || document.title;
     replaceText('Jogo de Panelas Antiaderente Cerâmica Mimo/Colinox Style 10 Ps', product.name);
     replaceText('Jogo de Panelas Antiaderente Ceramica Mimo/Colinox Style 10 Ps', product.name);
@@ -824,9 +842,27 @@ window.__PRODUCT_PAGE__ = ${productJson};
       });
       if (desc) desc.textContent = product.description;
     }
-    if (product.imageUrl) {
+    if (gallery.length) {
+      Array.from(document.querySelectorAll('img')).slice(0, gallery.length).forEach(function (img, index) {
+        img.src = gallery[index];
+      });
       var firstImg = document.querySelector('img');
-      if (firstImg) firstImg.src = product.imageUrl;
+      if (firstImg) firstImg.src = gallery[0];
+    }
+    if (Array.isArray(product.comments) && product.comments.length) {
+      var comments = document.createElement('section');
+      comments.style.cssText = 'background:#fff;margin:12px;border-radius:12px;padding:16px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;';
+      comments.innerHTML = '<h3 style="font-size:18px;margin:0 0 12px;color:#111;">Comentarios dos compradores</h3>' + product.comments.map(function (item) {
+        var stars = '★★★★★'.slice(0, Number(item.rating || 5));
+        return '<div style="border-top:1px solid #f1f1f1;padding:12px 0;">'
+          + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'
+          + (item.avatar ? '<img src="' + item.avatar + '" style="width:34px;height:34px;border-radius:50%;object-fit:cover;">' : '<div style="width:34px;height:34px;border-radius:50%;background:#f1f5f9;"></div>')
+          + '<div><strong style="font-size:14px;">' + h(item.name || 'Cliente') + '</strong><div style="font-size:12px;color:#f59e0b;">' + stars + '</div></div>'
+          + '</div><p style="font-size:14px;line-height:1.45;color:#333;margin:0;">' + h(item.text || '') + '</p>'
+          + (item.image ? '<img src="' + item.image + '" style="width:86px;height:86px;border-radius:8px;object-fit:cover;margin-top:8px;">' : '')
+          + '</div>';
+      }).join('');
+      document.body.appendChild(comments);
     }
     document.querySelectorAll('a[href*="checkout"], button').forEach(function (el) {
       if ((el.textContent || '').toLowerCase().includes('comprar') || (el.href || '').includes('checkout')) {
