@@ -73,7 +73,10 @@ function pickFirst(obj, keys) {
 }
 
 function gatewayErrorMessage(gatewayName, data, fallback) {
-  const raw = String(data?.message || data?.error || data?.errors?.[0]?.message || fallback || '').trim();
+  const detailList = Array.isArray(data?.details)
+    ? data.details.map(item => `${item.field || 'campo'}: ${item.message || item.code || 'invalido'}`).join('; ')
+    : '';
+  const raw = String(detailList || data?.message || data?.error || data?.errors?.[0]?.message || fallback || '').trim();
   if (/valid api credentials|invalid api|credentials|unauthorized|forbidden|token|api key/i.test(raw)) {
     return gatewayName + ' recusou a cobranca Pix porque as credenciais da API nao estao validas. Confira o token/chave em Admin > Gateways.';
   }
@@ -197,6 +200,7 @@ async function createGatewayPixPayment(gateway, payload) {
     const authToken = Buffer.from(`${gateway.secret_key}:${gateway.public_key}`).toString('base64');
     const amountInCents = toCents(payload.amount);
     const documentNumber = toDigits(payload.details.cpf);
+    const shipping = payload.details.shipping || {};
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -227,6 +231,19 @@ async function createGatewayPixPayment(gateway, payload) {
             externalRef: payload.orderReference
           }
         ],
+        shipping: {
+          fee: 0,
+          address: {
+            street: shipping.street || 'Nao informado',
+            streetNumber: shipping.number || 'S/N',
+            complement: shipping.complement || '',
+            zipCode: toDigits(shipping.cep),
+            neighborhood: shipping.neighborhood || 'Nao informado',
+            city: shipping.city || 'Nao informado',
+            state: String(shipping.state || 'SP').toUpperCase().slice(0, 2),
+            country: 'br'
+          }
+        },
         pix: {
           expiresInSeconds: 600
         },

@@ -3726,6 +3726,15 @@
           email: email,
           phone: phone,
           address: street + ', No ' + number + ', ' + neighborhood + ' - ' + city + ' / ' + state + ' (CEP: ' + cep + ')',
+          shipping: {
+            street: street,
+            number: number,
+            neighborhood: neighborhood,
+            city: city,
+            state: state,
+            cep: cep,
+            complement: document.getElementById('txtComplement').value.trim()
+          },
           trafficSource: detectTrafficSource(),
           paymentMethod: 'PIX'
         }
