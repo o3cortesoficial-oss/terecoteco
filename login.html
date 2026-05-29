@@ -452,23 +452,32 @@
     btnText.classList.add('loading');
     btnLoader.style.display = 'block';
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password
-    });
+    try {
+      const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
 
-    if (error) {
-      // Revert loading state
+      if (error) {
+        // Revert loading state
+        submitBtn.disabled = false;
+        btnText.classList.remove('loading');
+        btnLoader.style.display = 'none';
+
+        // Trigger gorgeous shake animated alert message
+        errorAlert.style.display = 'flex';
+        errorMessage.textContent = 'E-mail ou senha incorretos.';
+      } else {
+        // Beautiful redirect transition
+        window.location.href = 'admin.html';
+      }
+    } catch (err) {
+      console.error('Login error:', err);
       submitBtn.disabled = false;
       btnText.classList.remove('loading');
       btnLoader.style.display = 'none';
-
-      // Trigger gorgeous shake animated alert message
       errorAlert.style.display = 'flex';
-      errorMessage.textContent = 'E-mail ou senha incorretos.';
-    } else {
-      // Beautiful redirect transition
-      window.location.href = 'admin.html';
+      errorMessage.textContent = 'Erro de rede ou conexão.';
     }
   });
 </script>
