@@ -1934,9 +1934,19 @@
 
       display: none;
 
-      position: absolute;
+      position: fixed;
 
-      inset: 0;
+      top: 0;
+
+      left: 50%;
+
+      bottom: 0;
+
+      width: 100%;
+
+      max-width: 480px;
+
+      transform: translateX(-50%);
 
       background-color: var(--bg-gray);
 
@@ -1944,7 +1954,9 @@
 
       overflow-y: auto;
 
-      padding: 20px 16px;
+      padding: 12px;
+
+      overscroll-behavior: contain;
 
     }
 
@@ -2048,17 +2060,25 @@
 
       background-color: #ffffff;
 
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
     }
 
 
 
     .pix-qr-img {
 
-      width: 180px;
+      width: 196px;
 
-      height: 180px;
+      height: 196px;
 
       display: block;
+
+      object-fit: contain;
 
     }
 
@@ -3783,6 +3803,9 @@
       if (payment.qrCodeBase64) {
         qrImage.style.display = 'block';
         qrImage.src = payment.qrCodeBase64.startsWith('data:') ? payment.qrCodeBase64 : 'data:image/png;base64,' + payment.qrCodeBase64;
+      } else if (pixCode) {
+        qrImage.style.display = 'block';
+        qrImage.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&data=' + encodeURIComponent(pixCode);
       } else {
         qrImage.removeAttribute('src');
         qrImage.style.display = 'none';
@@ -3793,6 +3816,8 @@
 
       processingOverlay.style.display = 'none';
       successOverlay.style.display = 'block';
+      successOverlay.scrollTop = 0;
+      window.scrollTo({ top: 0, behavior: 'auto' });
     }
 
     // Countdown Timer Helper for Pix QR Code
