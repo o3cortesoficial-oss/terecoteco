@@ -1503,6 +1503,9 @@
       document.getElementById('sidebarUsername').textContent = savedUser;
       document.getElementById('avatarLetter').textContent = savedUser.charAt(0).toUpperCase();
     }
+  }).catch((err) => {
+    console.error('Auth error:', err);
+    window.location.href = 'login.html';
   });
 
   // ==========================================

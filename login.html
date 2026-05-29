@@ -402,6 +402,8 @@
     if (session) {
       window.location.href = 'admin.html';
     }
+  }).catch((err) => {
+    console.error('Session check error:', err);
   });
 
   const loginForm = document.getElementById('loginForm');
