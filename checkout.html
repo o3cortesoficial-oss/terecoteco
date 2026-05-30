@@ -3100,6 +3100,36 @@
       }
     }
 
+    const checkoutFunnel = (() => {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2);
+      const productSlug = params.get('product') || 'kit-panela';
+      let lastStage = '';
+
+      function track(stage, eventType = 'checkout_stage', extra = {}) {
+        if (!stage || stage === lastStage) return;
+        lastStage = stage;
+        fetch('/api/funnel-events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            eventType,
+            stage,
+            sessionId,
+            productSlug,
+            productName: 'Jogo Panelas Ceramica 10 Pecas',
+            trafficSource: detectTrafficSource(),
+            path: window.location.pathname + window.location.search,
+            ...extra
+          })
+        }).catch(() => {});
+      }
+
+      return { track };
+    })();
+
+    checkoutFunnel.track('checkout_opened', 'checkout_opened');
+
     let quantity = 1;
 
     let isAddressSaved = false;
@@ -3644,6 +3674,29 @@
 
     }
 
+    [
+      'txtFullName',
+      'txtCpf',
+      'txtEmail',
+      'txtPhone'
+    ].forEach((id) => {
+      const input = document.getElementById(id);
+      if (input) input.addEventListener('input', () => checkoutFunnel.track('checkout_contact'));
+    });
+
+    [
+      'txtCep',
+      'txtStreet',
+      'txtNumber',
+      'txtNeighborhood',
+      'txtComplement',
+      'txtCity',
+      'txtState'
+    ].forEach((id) => {
+      const input = document.getElementById(id);
+      if (input) input.addEventListener('input', () => checkoutFunnel.track('checkout_address'));
+    });
+
     checkoutMessageButton.addEventListener('click', () => {
 
       checkoutMessageOverlay.style.display = 'none';
@@ -3653,6 +3706,7 @@
 
 
     btnPlaceOrder.addEventListener('click', () => {
+      checkoutFunnel.track('checkout_payment');
 
       // Validate address entered
 
@@ -3773,12 +3827,14 @@
         }
       } catch (err) {
         processingOverlay.style.display = 'none';
+        checkoutFunnel.track('checkout_error', 'checkout_error');
         showCheckoutMessage("Pagamento nao iniciado", err.message);
         return;
       }
 
       const orderId = data.order.id;
       const payment = data.payment;
+      checkoutFunnel.track('checkout_pix_ready', 'checkout_pix_ready', { orderId });
 
       document.getElementById('lblReceiptOrderId').textContent = orderId;
       document.getElementById('lblReceiptClientName').textContent = fullName;

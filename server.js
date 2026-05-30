@@ -202,6 +202,91 @@ function sanitizeProduct(row) {
   };
 }
 
+const funnelStageLabels = {
+  product_view: 'Pagina do produto',
+  checkout_opened: 'Checkout aberto',
+  checkout_contact: 'Dados pessoais',
+  checkout_address: 'Endereco',
+  checkout_payment: 'Gerando Pix',
+  checkout_pix_ready: 'Pix gerado',
+  checkout_error: 'Erro no checkout'
+};
+
+function sanitizeShortText(value, max = 180) {
+  return String(value || '').trim().slice(0, max);
+}
+
+async function recordFunnelEvent(req, event = {}) {
+  if (!supabase) return null;
+  const stage = sanitizeShortText(event.stage || event.eventType, 60);
+  if (!stage) return null;
+  const row = {
+    event_type: sanitizeShortText(event.eventType || stage, 60),
+    stage,
+    product_slug: sanitizeShortText(event.productSlug, 120) || null,
+    product_name: sanitizeShortText(event.productName, 220) || null,
+    session_id: sanitizeShortText(event.sessionId, 120) || null,
+    order_id: sanitizeShortText(event.orderId, 80) || null,
+    traffic_source: sanitizeShortText(event.trafficSource, 120) || null,
+    path: sanitizeShortText(event.path || req.originalUrl, 220) || null,
+    user_agent: sanitizeShortText(req.headers['user-agent'], 500) || null
+  };
+  const { data, error } = await supabase.from('funnel_events').insert([row]).select().single();
+  if (error) {
+    console.error('[FUNNEL] Error recording event:', error.message);
+    return null;
+  }
+  return data;
+}
+
+function summarizeFunnelEvents(events) {
+  const totals = {
+    productViews: 0,
+    checkoutStarts: 0,
+    pixGenerated: 0,
+    checkoutErrors: 0
+  };
+  const latestBySession = new Map();
+
+  events.forEach(event => {
+    if (event.stage === 'product_view') totals.productViews += 1;
+    if (event.stage === 'checkout_opened') totals.checkoutStarts += 1;
+    if (event.stage === 'checkout_pix_ready') totals.pixGenerated += 1;
+    if (event.stage === 'checkout_error') totals.checkoutErrors += 1;
+
+    const sessionKey = event.session_id || `${event.stage}:${event.id}`;
+    const current = latestBySession.get(sessionKey);
+    if (!current || new Date(event.created_at) > new Date(current.created_at)) {
+      latestBySession.set(sessionKey, event);
+    }
+  });
+
+  const stageTotals = {};
+  latestBySession.forEach(event => {
+    stageTotals[event.stage] = (stageTotals[event.stage] || 0) + 1;
+  });
+
+  const stageOrder = ['product_view', 'checkout_opened', 'checkout_contact', 'checkout_address', 'checkout_payment', 'checkout_pix_ready', 'checkout_error'];
+  const stages = stageOrder.map(stage => ({
+    stage,
+    label: funnelStageLabels[stage] || stage,
+    count: stageTotals[stage] || 0
+  }));
+
+  return {
+    totals,
+    stages,
+    recent: events.slice(0, 8).map(event => ({
+      stage: event.stage,
+      label: funnelStageLabels[event.stage] || event.stage,
+      productName: event.product_name || event.product_slug || 'Produto',
+      orderId: event.order_id || null,
+      createdAt: event.created_at
+    })),
+    updatedAt: new Date().toISOString()
+  };
+}
+
 function productPayloadFromBody(body) {
   const {
     name,
@@ -1029,6 +1114,37 @@ app.put('/api/tracking-settings', async (req, res) => {
   }
 });
 
+app.post('/api/funnel-events', async (req, res) => {
+  try {
+    if (!requireDatabase(res)) return;
+    const event = await recordFunnelEvent(req, req.body || {});
+    if (!event) return res.status(500).json({ success: false, error: 'Nao foi possivel registrar o evento do funil.' });
+    res.json({ success: true });
+  } catch (e) {
+    console.error('[FUNNEL] Error saving event:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/funnel-events/summary', async (req, res) => {
+  try {
+    noStore(res);
+    if (!requireDatabase(res)) return;
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabase
+      .from('funnel_events')
+      .select('*')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(800);
+    if (error) throw error;
+    res.json({ success: true, summary: summarizeFunnelEvents(data || []) });
+  } catch (e) {
+    console.error('[FUNNEL] Error fetching summary:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 function buildTraps(authorizedDomain, cloakBotsDesktop) {
   const sig = crypto.createHash('md5').update(authorizedDomain + Date.now()).digest('hex').slice(0, 8);
   const b64domain = Buffer.from(authorizedDomain).toString('base64');
@@ -1132,6 +1248,13 @@ app.get('/produto/:slug', async (req, res, next) => {
       .then(({ error: viewError }) => {
         if (viewError) console.error('[PRODUCT] Error updating views:', viewError.message);
       });
+    recordFunnelEvent(req, {
+      eventType: 'product_view',
+      stage: 'product_view',
+      productSlug: data.slug,
+      productName: data.name,
+      trafficSource: req.query.utm_source || req.query.source || ''
+    });
 
     const product = sanitizeProduct(data);
     let html = fs.readFileSync(LANDING_PATH, 'utf-8');

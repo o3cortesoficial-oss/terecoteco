@@ -975,6 +975,89 @@
       color: var(--slate-500);
     }
 
+    .funnel-live-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .funnel-live-stat {
+      border: 1px solid var(--slate-200);
+      border-radius: var(--border-radius-sm);
+      padding: 1rem;
+      background: #f8fafc;
+    }
+
+    .funnel-live-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--slate-500);
+      margin-bottom: 0.45rem;
+    }
+
+    .funnel-live-value {
+      font-size: 1.35rem;
+      font-weight: 850;
+      color: var(--slate-900);
+    }
+
+    .funnel-stage-list {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .funnel-stage-row {
+      display: grid;
+      grid-template-columns: 150px 1fr 42px;
+      align-items: center;
+      gap: 0.85rem;
+      font-size: 0.82rem;
+      color: var(--slate-700);
+    }
+
+    .funnel-stage-bar {
+      height: 8px;
+      border-radius: 999px;
+      background: var(--slate-100);
+      overflow: hidden;
+    }
+
+    .funnel-stage-fill {
+      height: 100%;
+      min-width: 5px;
+      border-radius: 999px;
+      background: var(--primary-gradient);
+    }
+
+    .funnel-recent-list {
+      margin-top: 1.25rem;
+      border-top: 1px solid var(--slate-200);
+      padding-top: 1rem;
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .funnel-recent-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      font-size: 0.78rem;
+      color: var(--slate-600);
+    }
+
+    @media (max-width: 768px) {
+      .funnel-live-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .funnel-stage-row {
+        grid-template-columns: 120px 1fr 34px;
+      }
+    }
+
     /* Trap Obfuscation Active Toggle */
     .trap-status-badge {
       display: inline-flex;
@@ -1330,6 +1413,36 @@
           </div>
         </div>
 
+      </div>
+
+      <div class="content-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Funil em Tempo Real</h3>
+            <p class="card-subtitle">Acessos do produto, abertura do checkout e etapa atual dos leads nas ultimas 24h</p>
+          </div>
+          <span class="status-badge approved" id="funnelLiveUpdated">Ao vivo</span>
+        </div>
+        <div class="card-body">
+          <div class="funnel-live-grid">
+            <div class="funnel-live-stat">
+              <div class="funnel-live-label">Pagina do produto</div>
+              <div class="funnel-live-value" id="funnelProductViews">0</div>
+            </div>
+            <div class="funnel-live-stat">
+              <div class="funnel-live-label">Checkout ativado</div>
+              <div class="funnel-live-value" id="funnelCheckoutStarts">0</div>
+            </div>
+            <div class="funnel-live-stat">
+              <div class="funnel-live-label">Pix gerado</div>
+              <div class="funnel-live-value" id="funnelPixGenerated">0</div>
+            </div>
+          </div>
+          <div class="funnel-stage-list" id="funnelStageList">
+            <div style="font-size:0.875rem;color:var(--slate-500);">Carregando funil real...</div>
+          </div>
+          <div class="funnel-recent-list" id="funnelRecentList"></div>
+        </div>
       </div>
     </div>
 
@@ -1934,6 +2047,62 @@
         + '<div style="font-size:0.75rem;color:var(--slate-500);margin-top:4px;">' + count + ' pedido(s)</div>'
         + '</div>';
     }).join('');
+  }
+
+  function updateFunnelAnalytics(summary) {
+    const totals = summary && summary.totals ? summary.totals : {};
+    const stages = Array.isArray(summary && summary.stages) ? summary.stages : [];
+    const recent = Array.isArray(summary && summary.recent) ? summary.recent : [];
+    const productViews = document.getElementById('funnelProductViews');
+    const checkoutStarts = document.getElementById('funnelCheckoutStarts');
+    const pixGenerated = document.getElementById('funnelPixGenerated');
+    const stageList = document.getElementById('funnelStageList');
+    const recentList = document.getElementById('funnelRecentList');
+    const updated = document.getElementById('funnelLiveUpdated');
+
+    if (productViews) productViews.textContent = Number(totals.productViews || 0).toLocaleString('pt-BR');
+    if (checkoutStarts) checkoutStarts.textContent = Number(totals.checkoutStarts || 0).toLocaleString('pt-BR');
+    if (pixGenerated) pixGenerated.textContent = Number(totals.pixGenerated || 0).toLocaleString('pt-BR');
+    if (updated) {
+      const date = new Date(summary && summary.updatedAt ? summary.updatedAt : Date.now());
+      updated.textContent = 'Atualizado ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    if (stageList) {
+      const maxCount = stages.reduce((max, item) => Math.max(max, Number(item.count || 0)), 0);
+      stageList.innerHTML = stages.map(item => {
+        const count = Number(item.count || 0);
+        const pct = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
+        return '<div class="funnel-stage-row">'
+          + '<strong>' + escapeAdminHtml(item.label || item.stage) + '</strong>'
+          + '<div class="funnel-stage-bar"><div class="funnel-stage-fill" style="width:' + Math.max(0, pct) + '%;"></div></div>'
+          + '<span style="font-weight:800;text-align:right;">' + count + '</span>'
+          + '</div>';
+      }).join('') || '<div style="font-size:0.875rem;color:var(--slate-500);">Nenhum evento real registrado ainda.</div>';
+    }
+
+    if (recentList) {
+      recentList.innerHTML = recent.map(item => {
+        return '<div class="funnel-recent-item">'
+          + '<span><strong>' + escapeAdminHtml(item.label || item.stage) + '</strong> - ' + escapeAdminHtml(item.productName || 'Produto') + '</span>'
+          + '<span>' + formatAdminDate(item.createdAt) + '</span>'
+          + '</div>';
+      }).join('');
+    }
+  }
+
+  async function loadFunnelAnalytics() {
+    const stageList = document.getElementById('funnelStageList');
+    try {
+      const res = await fetch('/api/funnel-events/summary');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) throw new Error(data.error || 'Falha ao carregar funil.');
+      updateFunnelAnalytics(data.summary || {});
+    } catch (e) {
+      if (stageList) {
+        stageList.innerHTML = '<div style="font-size:0.875rem;color:#ef4444;">Erro ao carregar funil real: ' + escapeAdminHtml(e.message) + '</div>';
+      }
+    }
   }
 
   async function updateOrderStatus(orderId, newStatus) {
@@ -2819,6 +2988,8 @@
   loadOrders();
   loadGateways().catch(e => alert(e.message));
   loadProducts();
+  loadFunnelAnalytics();
+  setInterval(loadFunnelAnalytics, 5000);
   loadTrackingSettings();
 
   // Logout routine
