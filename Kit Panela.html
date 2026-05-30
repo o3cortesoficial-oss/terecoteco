@@ -258,17 +258,20 @@
  <svg viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=1.6 stroke-linecap=round stroke-linejoin=round><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path></svg>
  <span>Chat</span>
  </button>
- <a class=bb-cart href="checkout.html">Carrinho</a>
- <a class=bb-buy href="checkout.html">Comprar Agora</a>
+ <a class=bb-cart href="/checkout">Carrinho</a>
+ <a class=bb-buy href="/checkout">Comprar Agora</a>
  </div>
 </nav>
 <script>
  document.addEventListener("DOMContentLoaded", function() {
    const currentParams = window.location.search;
-   if (currentParams) {
-     document.querySelectorAll(".bb-cart, .bb-buy").forEach(link => {
-       link.href = "checkout.html" + currentParams;
+   const checkoutUrl = "/checkout" + currentParams;
+   document.querySelectorAll(".bb-cart, .bb-buy").forEach(link => {
+     link.href = checkoutUrl;
+     link.addEventListener("click", function(event) {
+       event.preventDefault();
+       window.location.href = checkoutUrl;
      });
-   }
+   });
  });
 </script>

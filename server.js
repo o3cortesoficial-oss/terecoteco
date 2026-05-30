@@ -487,8 +487,15 @@ window.__PRODUCT_PAGE__ = ${productJson};
   }
   function applyCheckoutLinks() {
     var target = '/checkout?product=' + encodeURIComponent(product.slug || '');
-    document.querySelectorAll('.bb-cart, .bb-buy, a[href*="checkout"]').forEach(function (link) {
-      link.setAttribute('href', target);
+    document.querySelectorAll('.bb-cart, .bb-buy, a[href*="checkout"], button').forEach(function (link) {
+      var text = (link.textContent || '').toLowerCase();
+      var isCheckoutAction = link.classList.contains('bb-cart') || link.classList.contains('bb-buy') || (link.href || '').indexOf('checkout') !== -1 || text.indexOf('comprar') !== -1 || text.indexOf('carrinho') !== -1;
+      if (!isCheckoutAction) return;
+      if (link.tagName === 'A') link.setAttribute('href', target);
+      link.addEventListener('click', function (event) {
+        event.preventDefault();
+        window.location.href = target;
+      });
     });
   }
   function applyProduct() {
@@ -1218,6 +1225,13 @@ app.get('/', (req, res) => {
 app.get('/checkout', (req, res) => {
   if (isVercelBot(req)) return res.sendFile(path.join(__dirname, 'white.html'));
   res.sendFile(CHECKOUT_PATH);
+});
+
+app.get(['/checkout.html', '/produto/:slug/checkout.html'], (req, res) => {
+  if (isVercelBot(req)) return res.sendFile(path.join(__dirname, 'white.html'));
+  const product = req.params.slug || req.query.product || '';
+  const suffix = product ? `?product=${encodeURIComponent(product)}` : '';
+  res.redirect(302, `/checkout${suffix}`);
 });
 
 app.get('/api/product-template', (req, res) => {
