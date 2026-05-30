@@ -251,6 +251,76 @@
       letter-spacing: -0.02em;
     }
 
+    .header-title-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .date-range-card {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-height: 46px;
+      padding: 0.5rem 0.875rem;
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--border-radius-sm);
+      box-shadow: var(--card-shadow);
+      color: var(--slate-900);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .date-range-card:hover {
+      border-color: rgba(255, 61, 103, 0.35);
+      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+    }
+
+    .date-range-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: rgba(255, 61, 103, 0.1);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .date-range-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .date-range-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      text-align: left;
+    }
+
+    .date-range-kicker {
+      font-size: 0.64rem;
+      font-weight: 800;
+      color: var(--slate-500);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .date-range-label {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      white-space: nowrap;
+    }
+
+    .date-range-card[hidden] {
+      display: none;
+    }
+
     .header-actions {
       display: flex;
       align-items: center;
@@ -1168,6 +1238,78 @@
       gap: 0.75rem;
     }
 
+    .date-modal {
+      width: min(520px, calc(100vw - 32px));
+    }
+
+    .date-presets {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .date-preset-btn {
+      border: 1px solid var(--slate-200);
+      background: #ffffff;
+      color: var(--slate-700);
+      border-radius: var(--border-radius-sm);
+      padding: 0.75rem 0.9rem;
+      font-size: 0.82rem;
+      font-weight: 750;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+    }
+
+    .date-preset-btn.active,
+    .date-preset-btn:hover {
+      border-color: rgba(255, 61, 103, 0.35);
+      background: rgba(255, 61, 103, 0.08);
+      color: var(--primary);
+    }
+
+    .date-custom-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .date-input-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--slate-500);
+      margin-bottom: 0.4rem;
+    }
+
+    .date-input {
+      width: 100%;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--border-radius-sm);
+      padding: 0.75rem 0.85rem;
+      font: inherit;
+      font-weight: 650;
+      color: var(--slate-800);
+      background: #f8fafc;
+      outline: none;
+    }
+
+    .date-input:focus {
+      border-color: rgba(255, 61, 103, 0.45);
+      box-shadow: 0 0 0 3px rgba(255, 61, 103, 0.12);
+      background: #ffffff;
+    }
+
+    @media (max-width: 560px) {
+      .date-presets,
+      .date-custom-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .btn-modal-close {
       padding: 0.5rem 1rem;
       border: 1px solid var(--slate-300);
@@ -1177,6 +1319,18 @@
       border-radius: var(--border-radius-sm);
       cursor: pointer;
       font-size: 0.8125rem;
+    }
+
+    .btn-primary {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: var(--primary-gradient);
+      color: #ffffff;
+      font-weight: 800;
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      font-size: 0.8125rem;
+      box-shadow: 0 10px 22px rgba(255, 61, 103, 0.22);
     }
 
     .progress-bar-container {
@@ -1290,7 +1444,20 @@
 <main class="main-content">
   <!-- Top header bar with quick links -->
   <header class="top-header">
-    <h2 class="page-title" id="pageHeaderTitle">Visão Geral</h2>
+    <div class="header-title-group">
+      <h2 class="page-title" id="pageHeaderTitle">Visão Geral</h2>
+      <button class="date-range-card" id="dateRangeCard" type="button">
+        <span class="date-range-icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M4 11h16M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
+          </svg>
+        </span>
+        <span class="date-range-content">
+          <span class="date-range-kicker">Periodo das metricas</span>
+          <span class="date-range-label" id="dateRangeLabel">Hoje</span>
+        </span>
+      </button>
+    </div>
     <div class="header-actions">
       <a href="/Kit%20Panela.html" target="_blank" class="btn-action-light">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -1897,6 +2064,40 @@
   </div>
 </main>
 
+<!-- Date Range Metrics Modal -->
+<div class="modal-overlay" id="dateRangeOverlay">
+  <div class="modal date-modal">
+    <div class="modal-header">
+      <div>
+        <h3 class="card-title">Periodo das metricas</h3>
+        <p class="card-subtitle">Escolha a data usada nos cards da Visao Geral</p>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="date-presets">
+        <button class="date-preset-btn active" type="button" data-range-preset="today">Hoje</button>
+        <button class="date-preset-btn" type="button" data-range-preset="yesterday">Ontem</button>
+        <button class="date-preset-btn" type="button" data-range-preset="7d">Ultimos 7 dias</button>
+        <button class="date-preset-btn" type="button" data-range-preset="30d">Ultimos 30 dias</button>
+      </div>
+      <div class="date-custom-grid">
+        <label>
+          <span class="date-input-label">Inicio</span>
+          <input class="date-input" id="dateRangeStart" type="date">
+        </label>
+        <label>
+          <span class="date-input-label">Fim</span>
+          <input class="date-input" id="dateRangeEnd" type="date">
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-close" id="dateRangeCancel" type="button">Cancelar</button>
+      <button class="btn-primary" id="dateRangeApply" type="button">Aplicar periodo</button>
+    </div>
+  </div>
+</div>
+
 <!-- Injections / Progress Simulation Modal -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
@@ -1962,6 +2163,7 @@
   let products = [];
   let currentGatewayEdit = 'primecash';
   let currentProductEdit = null;
+  let selectedDateRange = buildDateRange('today');
 
   function formatAdminDate(value) {
     if (!value) return '-';
@@ -1977,6 +2179,79 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  function localDateInputValue(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function startOfDay(date) {
+    const value = new Date(date);
+    value.setHours(0, 0, 0, 0);
+    return value;
+  }
+
+  function endOfDay(date) {
+    const value = new Date(date);
+    value.setHours(23, 59, 59, 999);
+    return value;
+  }
+
+  function buildDateRange(preset, customStart, customEnd) {
+    const now = new Date();
+    let start = startOfDay(now);
+    let end = endOfDay(now);
+    let label = 'Hoje';
+
+    if (preset === 'yesterday') {
+      const yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
+      start = startOfDay(yesterday);
+      end = endOfDay(yesterday);
+      label = 'Ontem';
+    } else if (preset === '7d') {
+      start = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6));
+      label = 'Ultimos 7 dias';
+    } else if (preset === '30d') {
+      start = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29));
+      label = 'Ultimos 30 dias';
+    } else if (preset === 'custom') {
+      start = startOfDay(new Date(customStart + 'T00:00:00'));
+      end = endOfDay(new Date(customEnd + 'T00:00:00'));
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
+        start = startOfDay(now);
+        end = endOfDay(now);
+        preset = 'today';
+        label = 'Hoje';
+      } else {
+        label = start.toLocaleDateString('pt-BR') + ' - ' + end.toLocaleDateString('pt-BR');
+      }
+    }
+
+    return { preset, start, end, label };
+  }
+
+  function getFilteredOrders() {
+    return orders.filter(order => {
+      const date = new Date(order.created_at || order.date);
+      if (Number.isNaN(date.getTime())) return false;
+      return date >= selectedDateRange.start && date <= selectedDateRange.end;
+    });
+  }
+
+  function refreshOverviewMetrics() {
+    const filtered = getFilteredOrders();
+    updateDashboardMetrics(filtered);
+    updateTrafficSources(filtered);
+    loadFunnelAnalytics();
+  }
+
+  function updateDateRangeLabel() {
+    const label = document.getElementById('dateRangeLabel');
+    if (label) label.textContent = selectedDateRange.label;
   }
 
   function updateDashboardMetrics(ordersList) {
@@ -2094,7 +2369,11 @@
   async function loadFunnelAnalytics() {
     const stageList = document.getElementById('funnelStageList');
     try {
-      const res = await fetch('/api/funnel-events/summary');
+      const params = new URLSearchParams({
+        start: selectedDateRange.start.toISOString(),
+        end: selectedDateRange.end.toISOString()
+      });
+      const res = await fetch('/api/funnel-events/summary?' + params.toString());
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) throw new Error(data.error || 'Falha ao carregar funil.');
       updateFunnelAnalytics(data.summary || {});
@@ -2119,7 +2398,7 @@
     const idx = orders.findIndex(o => o.id === orderId);
     if (idx !== -1) orders[idx] = data.order;
     renderOrders(orders);
-    updateDashboardMetrics(orders);
+    refreshOverviewMetrics();
   }
 
   function renderOrders(ordersList) {
@@ -2164,18 +2443,81 @@
       if (!res.ok || !data.success) throw new Error(data.error || 'Falha ao carregar pedidos.');
       orders = Array.isArray(data.orders) ? data.orders : [];
       renderOrders(orders);
-      updateDashboardMetrics(orders);
-      updateTrafficSources(orders);
+      refreshOverviewMetrics();
     } catch (e) {
       if (tableBody) tableBody.innerHTML = '<tr><td colspan="6">Erro ao carregar pedidos reais: ' + e.message + '</td></tr>';
       updateDashboardMetrics([]);
       updateTrafficSources([]);
+      loadFunnelAnalytics();
     }
   }
 
   const navBtns = document.querySelectorAll('.nav-item-btn');
   const tabs = document.querySelectorAll('.tab-content');
   const pageHeaderTitle = document.getElementById('pageHeaderTitle');
+  const dateRangeCard = document.getElementById('dateRangeCard');
+  const dateRangeOverlay = document.getElementById('dateRangeOverlay');
+  const dateRangeStart = document.getElementById('dateRangeStart');
+  const dateRangeEnd = document.getElementById('dateRangeEnd');
+  const dateRangeCancel = document.getElementById('dateRangeCancel');
+  const dateRangeApply = document.getElementById('dateRangeApply');
+  const datePresetButtons = document.querySelectorAll('[data-range-preset]');
+  let pendingDatePreset = selectedDateRange.preset;
+
+  function syncDateModal() {
+    if (dateRangeStart) dateRangeStart.value = localDateInputValue(selectedDateRange.start);
+    if (dateRangeEnd) dateRangeEnd.value = localDateInputValue(selectedDateRange.end);
+    pendingDatePreset = selectedDateRange.preset;
+    datePresetButtons.forEach(button => button.classList.toggle('active', button.dataset.rangePreset === pendingDatePreset));
+  }
+
+  function closeDateModal() {
+    if (dateRangeOverlay) dateRangeOverlay.style.display = 'none';
+  }
+
+  if (dateRangeCard) {
+    dateRangeCard.addEventListener('click', () => {
+      syncDateModal();
+      dateRangeOverlay.style.display = 'flex';
+    });
+  }
+
+  datePresetButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      pendingDatePreset = button.dataset.rangePreset;
+      const range = buildDateRange(pendingDatePreset);
+      if (dateRangeStart) dateRangeStart.value = localDateInputValue(range.start);
+      if (dateRangeEnd) dateRangeEnd.value = localDateInputValue(range.end);
+      datePresetButtons.forEach(item => item.classList.toggle('active', item === button));
+    });
+  });
+
+  [dateRangeStart, dateRangeEnd].forEach(input => {
+    if (input) {
+      input.addEventListener('change', () => {
+        pendingDatePreset = 'custom';
+        datePresetButtons.forEach(button => button.classList.remove('active'));
+      });
+    }
+  });
+
+  if (dateRangeCancel) dateRangeCancel.addEventListener('click', closeDateModal);
+  if (dateRangeOverlay) {
+    dateRangeOverlay.addEventListener('click', event => {
+      if (event.target === dateRangeOverlay) closeDateModal();
+    });
+  }
+  if (dateRangeApply) {
+    dateRangeApply.addEventListener('click', () => {
+      const customStart = dateRangeStart ? dateRangeStart.value : '';
+      const customEnd = dateRangeEnd ? dateRangeEnd.value : '';
+      const nextRange = buildDateRange(pendingDatePreset === 'custom' ? 'custom' : pendingDatePreset, customStart, customEnd);
+      selectedDateRange = nextRange;
+      updateDateRangeLabel();
+      closeDateModal();
+      refreshOverviewMetrics();
+    });
+  }
 
   navBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2185,6 +2527,7 @@
       const targetId = btn.getAttribute('data-target');
       document.getElementById(targetId).classList.add('active');
       pageHeaderTitle.textContent = btn.innerText;
+      if (dateRangeCard) dateRangeCard.hidden = targetId !== 'tab-overview';
     });
   });
 
@@ -2985,10 +3328,10 @@
     });
   }
 
+  updateDateRangeLabel();
   loadOrders();
   loadGateways().catch(e => alert(e.message));
   loadProducts();
-  loadFunnelAnalytics();
   setInterval(loadFunnelAnalytics, 5000);
   loadTrackingSettings();
 

@@ -1137,11 +1137,17 @@ app.get('/api/funnel-events/summary', async (req, res) => {
   try {
     noStore(res);
     if (!requireDatabase(res)) return;
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const fallbackStart = new Date();
+    fallbackStart.setHours(0, 0, 0, 0);
+    const startDate = req.query.start ? new Date(String(req.query.start)) : fallbackStart;
+    const endDate = req.query.end ? new Date(String(req.query.end)) : new Date();
+    const startIso = Number.isNaN(startDate.getTime()) ? fallbackStart.toISOString() : startDate.toISOString();
+    const endIso = Number.isNaN(endDate.getTime()) ? new Date().toISOString() : endDate.toISOString();
     const { data, error } = await supabase
       .from('funnel_events')
       .select('*')
-      .gte('created_at', since)
+      .gte('created_at', startIso)
+      .lte('created_at', endIso)
       .order('created_at', { ascending: false })
       .limit(800);
     if (error) throw error;
