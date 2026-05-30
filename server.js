@@ -62,6 +62,102 @@ function formatOrder(row) {
   };
 }
 
+function sha256Normalized(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return null;
+  return crypto.createHash('sha256').update(normalized).digest('hex');
+}
+
+function sha256Digits(value) {
+  const digits = toDigits(value);
+  if (!digits) return null;
+  return crypto.createHash('sha256').update(digits).digest('hex');
+}
+
+async function getTrackingSettings() {
+  const { data, error } = await supabase
+    .from('tracking_settings')
+    .select('*')
+    .eq('id', 'default')
+    .maybeSingle();
+
+  if (error) throw error;
+  return data || {};
+}
+
+function buildTikTokUser(order) {
+  const user = {};
+  const email = sha256Normalized(order.customer_email);
+  const phone = sha256Digits(order.customer_phone);
+  const externalId = sha256Digits(order.customer_cpf);
+
+  if (email) user.email = email;
+  if (phone) user.phone = phone;
+  if (externalId) user.external_id = externalId;
+  return user;
+}
+
+async function sendTikTokPaidPurchase(order) {
+  const settings = await getTrackingSettings();
+  const pixelId = String(settings.tiktok_pixel_id || '').trim();
+  const accessToken = String(settings.tiktok_access_token || '').trim();
+
+  if (!pixelId || !accessToken) {
+    return { status: 'skipped', reason: 'TikTok Pixel ID ou token nao configurado.' };
+  }
+
+  const amount = Number(order.amount || 0);
+  const productName = String(order.product_name || 'Produto');
+  const payload = {
+    event_source: 'web',
+    event_source_id: pixelId,
+    data: [
+      {
+        event: 'Purchase',
+        event_time: Math.floor(Date.now() / 1000),
+        event_id: `paid_${String(order.order_id || '').replace(/[^a-zA-Z0-9_-]/g, '')}`,
+        user: buildTikTokUser(order),
+        properties: {
+          currency: 'BRL',
+          value: amount,
+          content_type: 'product',
+          contents: [
+            {
+              content_id: productName,
+              content_name: productName,
+              quantity: 1,
+              price: amount
+            }
+          ]
+        }
+      }
+    ]
+  };
+
+  try {
+    const response = await fetch('https://business-api.tiktok.com/open_api/v1.3/event/track/', {
+      method: 'POST',
+      headers: {
+        'Access-Token': accessToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.code) {
+      console.warn('[TRACKING] TikTok Purchase rejected:', data.message || response.statusText || data);
+      return {
+        status: 'failed',
+        reason: data.message || response.statusText || 'TikTok recusou o evento Purchase.'
+      };
+    }
+    return { status: 'sent', event: 'Purchase', eventId: payload.data[0].event_id };
+  } catch (error) {
+    console.warn('[TRACKING] TikTok Purchase failed:', error.message);
+    return { status: 'failed', reason: error.message };
+  }
+}
+
 function sanitizeGateway(row) {
   return {
     id: row.id,
@@ -679,7 +775,17 @@ app.post('/api/orders', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing required fields: name, product, amount.' });
     }
     const order = await createOrder({ name, product, amount, status: status || 'pending', details: details || {} });
-    res.json({ success: true, order });
+    let tracking = null;
+    if ((status || 'pending') === 'approved') {
+      const { data: rawOrder, error: rawError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('order_id', order.id)
+        .maybeSingle();
+      if (rawError) throw rawError;
+      if (rawOrder) tracking = { tiktokPurchase: await sendTikTokPaidPurchase(rawOrder) };
+    }
+    res.json({ success: true, order, tracking });
   } catch (e) {
     console.error('[ORDER] Error creating order:', e.message);
     res.status(500).json({ success: false, error: e.message });
@@ -696,16 +802,31 @@ app.patch('/api/orders/:id/status', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid status. Use: approved, pending, or declined.' });
     }
 
+    const orderId = decodeURIComponent(id);
+    const { data: currentOrder, error: currentError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('order_id', orderId)
+      .maybeSingle();
+    if (currentError) throw currentError;
+    if (!currentOrder) {
+      return res.status(404).json({ success: false, error: 'Order not found.' });
+    }
+
     const { data, error } = await supabase
       .from('orders')
       .update({ status })
-      .eq('order_id', decodeURIComponent(id))
-      .select();
+      .eq('order_id', orderId)
+      .select()
+      .single();
     if (error) throw error;
-    if (!data || data.length === 0) {
-      return res.status(404).json({ success: false, error: 'Order not found.' });
+
+    let tracking = null;
+    if (status === 'approved' && currentOrder.status !== 'approved') {
+      tracking = { tiktokPurchase: await sendTikTokPaidPurchase(data) };
     }
-    res.json({ success: true, order: formatOrder(data[0]) });
+
+    res.json({ success: true, order: formatOrder(data), tracking });
   } catch (e) {
     console.error('[ORDER] Error updating status:', e.message);
     res.status(500).json({ success: false, error: e.message });
